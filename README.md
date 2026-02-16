@@ -20,24 +20,26 @@ A cone embedded with a sensor that detects impact/knockover and instantly sends 
 
 ### Essential
 
-| # | Component | Notes |
-|---|-----------|-------|
-| 1 | ESP32 dev board | DevKit V1 or ESP32-C3 SuperMini |
-| 2 | MPU6050 module (GY-521) | Accelerometer + gyro breakout |
-| 3 | Jumper wires (x4) | VCC, GND, SDA, SCL |
-| 4 | Micro USB cable | Power + flashing |
-| 5 | USB power bank | Powers the cone during demo |
-| 6 | Traffic cone | Hollow base fits the electronics |
-| 7 | Mini breadboard | Keeps wiring clean inside the cone |
+| # | Component | Est. Price (MYR) | Links |
+|---|-----------|-------------------|-------|
+| 1 | ESP32 dev board | RM 8 - RM 40 | [Shopee](https://shopee.com.my/Esp32-Esp-32-Devkit-V1-30-Pin-Wifi-Bluetooth-i.161803224.8044862549) · [Lazada](https://www.lazada.com.my/products/esp32-esp32-c3-ai-c3-esp32-c3-devkitm-1-esp32-c3-mini-1-ai-s3-esp32-s3-n16r8-esp32-s3-devkit-c-dual-type-c-usb-development-board-i3461031238.html) |
+| 2 | MPU6050 module (GY-521) | RM 9 - RM 16 | [Shopee](https://shopee.com.my/6DOF-MPU-6050-GY-521-3-Axis-Gyro-Accelerometer-Sensor-Module-Arduino-i.33287405.462089363) · [Lazada](https://www.lazada.com.my/products/mpu6050-accelerometer-gyroscope-module-gy521-with-soldering-mpu-6050-gy-521-i497548453.html) |
+| 3 | Jumper wires (x4) | RM 2 - RM 5 | [Shopee](https://shopee.com.my/40-Ways-Dupont-Jumper-Wire-Arduino-10cm-20cm-30cm-Jumper-Wire-Male-to-Male-Female-to-Female-Male-to-Female-Jumper-i.325787521.22615912721) · [Lazada](https://www.lazada.com.my/products/dupont-jumper-wire-20cm-breadboard-jumper-cable-male-to-male-female-to-female-male-to-female-i493040156.html) |
+| 4 | Micro USB cable | RM 2 - RM 5 | [Shopee](https://shopee.com.my/Micro-USB-Charger-Cable-Data-Cable-3A-QC-4.0-Fast-Charging-1.2m-4-ft-i.344635910.28466236022) · [Lazada](https://www.lazada.com.my/products/micro-usb-20-cable-supports-data-transfer-2a-charging-i4399210443-s24697036848.html) |
+| 5 | USB power bank (mini) | RM 15 - RM 30 | [Shopee](https://shopee.com.my/New-5000mAh-Mini-Portable-Powerbank-for-Phone-Android-Micro-USB-Power-Bank-Mobile-Lightweight-Mobile-Battery-i.311405227.26656618203) · [Lazada](https://www.lazada.com.my/products/ugreen-portable-charger-pd-usb-c-5000mah-mini-power-bank-small-fast-charging-docking-battery-powerbank-compatible-with-android-and-iphone-16-pro-max-iphone-16-pro-max-iphone-15-and-full-series-power-bank-i4100752009.html) |
+| 6 | Traffic cone (30") | RM 20 - RM 30 | [Shopee](https://shopee.com.my/30-inch-Safety-Traffic-Pvc-Cone-Kon-Keselamatan-Jalan-Raya-30inci''(READY-STOCK)-i.195518124.7007655240) · [Lazada](https://www.lazada.com.my/products/30-safety-traffic-pvc-conekon-keselamatan-jalan-raya-i1591694210.html) |
+| 7 | Mini breadboard | RM 3 - RM 10 | [Shopee](https://shopee.com.my/Solderless-Mini-Breadboard-400-Holes-8.5cm-X-5.5cm-For-Arduino-i.133282937.2041267513) · [Lazada](https://www.lazada.com.my/products/syb-170-mini-solderless-breadboard-170-tie-points-for-arduino-raspberry-pi-diy-multicolor-linkable-i498292674-s916412660.html) |
 
 ### Optional
 
-| Component | Why |
-|-----------|-----|
-| LED (any color) | Visual feedback on impact |
-| Buzzer | Audio feedback on impact |
-| Rubber bands / velcro strips | Mount breadboard inside cone base |
-| GPS module (NEO-6M) | Location tracking (future scope) |
+| Component | Est. Price (MYR) | Why | Links |
+|-----------|-------------------|-----|-------|
+| LED module | RM 1 - RM 5 | Visual feedback on impact | [Shopee](https://shopee.com.my/KEYES-KY-009-RGB-3-Color-Full-Color-LED-SMD-Module-For-Arduino.-i.242730221.15049677452) · [Lazada](https://www.lazada.com.my/products/led-max7219-dot-matrix-module-display-4-in-1-5pin-cable-arduino-pic-pi-arm-5v-i143400534-s166110805.html) |
+| Buzzer module | RM 2 - RM 5 | Audio feedback on impact | [Shopee](https://shopee.com.my/KY-012-Active-Piezoelectric-Buzzer-Module-for-Arduino-i.134660521.2103704096) · [Lazada](https://www.lazada.com.my/products/arduino-pwm-digital-io-output-5v-buzzer-piezo-module-i438510537.html) |
+| Rubber bands / velcro strips | RM 2 - RM 5 | Mount breadboard inside cone base | — |
+| GPS module (NEO-6M) | RM 35 - RM 45 | Location tracking (future scope) | [Shopee](https://shopee.com.my/GPS-Module-NEO-6M-with-PPS-(pulse-per-second)-Signal-Ceramic-Antenna-i.126211897.8512222600) · [Lazada](https://www.lazada.com.my/products/ublox-neo-6m-gps-tracking-with-antenna-gy-gps6mv2-module-i544584207-s1080414789.html) |
+
+> Prices based on Shopee MY, Lazada MY, Cytron, and MakerHub as of Feb 2026. Links may expire — search the component name on either platform if a link is dead.
 
 ### Wiring
 
@@ -134,16 +136,19 @@ Topic: `smartcones/{cone_id}/event`
 
 ---
 
-## Cost Per Cone (approx)
+## Cost Per Cone (approx, MYR)
 
-| Part | Cost |
-|------|------|
-| ESP32 | ~$4 |
-| MPU6050 | ~$2 |
-| Breadboard + wires | ~$2 |
-| USB power bank | ~$5 |
-| Cone | ~$3 |
-| **Total** | **~$16** |
+| Part | Est. Price (MYR) |
+|------|-------------------|
+| ESP32 dev board | RM 15 |
+| MPU6050 (GY-521) | RM 10 |
+| Mini breadboard + jumper wires | RM 8 |
+| Micro USB cable | RM 3 |
+| USB power bank (mini) | RM 20 |
+| Traffic cone (30") | RM 25 |
+| **Total** | **~RM 81** |
+
+> Optional add-ons: LED module (~RM 3), buzzer (~RM 3), GPS NEO-6M (~RM 40).
 
 ---
 
