@@ -35,8 +35,8 @@ A cone embedded with a sensor that detects impact/knockover and instantly sends 
 
 | Component | Est. Price (MYR) | Why | Links |
 |-----------|-------------------|-----|-------|
-| LED module (KY-016 RGB, x1) | RM 1 - RM 5 | Green = upright, red = knocked over | <a href="https://makerhub.my/shop/ledkit/rgb-led-module-electronic-component-ky-016-tri-color/" target="_blank">MakerHub</a> · <a href="https://www.lazada.com.my/products/led-max7219-dot-matrix-module-display-4-in-1-5pin-cable-arduino-pic-pi-arm-5v-i143400534-s166110805.html" target="_blank">Lazada</a> |
-| Active buzzer module (x1) | RM 2 - RM 5 | Beeps on impact, no tone code needed | <a href="https://makerhub.my/shop/electrical/buzzer-active-passive-buzzer-5v-electronic-sound-alarm-module-tone-piezo/" target="_blank">MakerHub</a> · <a href="https://www.lazada.com.my/products/arduino-pwm-digital-io-output-5v-buzzer-piezo-module-i438510537.html" target="_blank">Lazada</a> |
+| LED module (KY-016 RGB, x1) | RM 1 - RM 5 | Green = upright, red = knocked over | <a href="https://shopee.com.my/RGB-LED-Module-Electronic-Component-KY-016-Tri-Color-i.1165814930.27823191316" target="_blank">MakerHub</a> |
+| Active buzzer module (x1) | RM 2 - RM 5 | Beeps on impact, no tone code needed | <a href="https://shopee.com.my/Buzzer-Active-Passive-Buzzer-5V-Electronic-Sound-Alarm-Module-Tone-Piezo-i.1165814930.28621911858" target="_blank">MakerHub</a> |
 | Rubber bands / velcro strips | RM 2 - RM 5 | Mount breadboard inside cone base | — |
 | GPS module (NEO-6M) | RM 35 - RM 45 | Location tracking (future scope) | <a href="https://shopee.com.my/GPS-Module-GY-NEO-6M-8M-with-Ceramic-Antenna-Time-and-Location-Tracking-For-Arduino-IOT-Project-i.1165814930.25064660228" target="_blank">MakerHub</a> · <a href="https://www.lazada.com.my/products/ublox-neo-6m-gps-tracking-with-antenna-gy-gps6mv2-module-i544584207-s1080414789.html" target="_blank">Lazada</a> |
 
