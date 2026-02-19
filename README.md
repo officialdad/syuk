@@ -24,11 +24,12 @@ A cone embedded with a sensor that detects impact/knockover and instantly sends 
 |---|-----------|-------------------|-------|
 | 1 | ESP32 dev board | RM 8 - RM 40 | <a href="https://shopee.com.my/NodeMCU-ESP32-Wi-Fi-Bluetooth-Development-Board-CH340-CP2012-For-IOT-Project-i.1165814930.22789260417" target="_blank">MakerHub</a> · <a href="https://www.lazada.com.my/products/esp32-esp32-c3-ai-c3-esp32-c3-devkitm-1-esp32-c3-mini-1-ai-s3-esp32-s3-n16r8-esp32-s3-devkit-c-dual-type-c-usb-development-board-i3461031238.html" target="_blank">Lazada</a> |
 | 2 | MPU6050 module (GY-521) | RM 9 - RM 16 | <a href="https://shopee.com.my/GY-521-Gyroscope-Accelerometer-Module-MPU6050-MPU-6050-Motion-Measurement-Drone-Robotic-Application-i.1165814930.25564691626" target="_blank">MakerHub</a> · <a href="https://www.lazada.com.my/products/mpu6050-accelerometer-gyroscope-module-gy521-with-soldering-mpu-6050-gy-521-i497548453.html" target="_blank">Lazada</a> |
-| 3 | Jumper wires (x4) | RM 2 - RM 5 | <a href="https://makerhub.my/shop/electrical/40pcs-dupont-wire-10cm-20cm-30cm-for-breadboard-diy-experiment/" target="_blank">MakerHub</a> · <a href="https://www.lazada.com.my/products/dupont-jumper-wire-20cm-breadboard-jumper-cable-male-to-male-female-to-female-male-to-female-i493040156.html" target="_blank">Lazada</a> |
-| 4 | Micro USB cable | RM 2 - RM 5 | <a href="https://makerhub.my/shop/electrical/data-cable-type-a-type-c-microusb-type-b-0-5m-1m-30cm-0-3m-100cm-data-transfer-upload-code/" target="_blank">MakerHub</a> · <a href="https://www.lazada.com.my/products/micro-usb-20-cable-supports-data-transfer-2a-charging-i4399210443-s24697036848.html" target="_blank">Lazada</a> |
-| 5 | USB power bank (mini) | RM 15 - RM 30 | <a href="https://shopee.com.my/New-5000mAh-Mini-Portable-Powerbank-for-Phone-Android-Micro-USB-Power-Bank-Mobile-Lightweight-Mobile-Battery-i.311405227.26656618203" target="_blank">Shopee</a> · <a href="https://www.lazada.com.my/products/ugreen-portable-charger-pd-usb-c-5000mah-mini-power-bank-small-fast-charging-docking-battery-powerbank-compatible-with-android-and-iphone-16-pro-max-iphone-16-pro-max-iphone-15-and-full-series-power-bank-i4100752009.html" target="_blank">Lazada</a> |
-| 6 | Traffic cone (30") | RM 20 - RM 30 | <a href="https://shopee.com.my/30-inch-Safety-Traffic-Pvc-Cone-Kon-Keselamatan-Jalan-Raya-30inci''(READY-STOCK)-i.195518124.7007655240" target="_blank">Shopee</a> · <a href="https://www.lazada.com.my/products/30-safety-traffic-pvc-conekon-keselamatan-jalan-raya-i1591694210.html" target="_blank">Lazada</a> |
-| 7 | Mini breadboard | RM 3 - RM 10 | <a href="https://shopee.com.my/Solderless-Mini-Breadboard-400-Holes-8.5cm-X-5.5cm-For-Arduino-i.133282937.2041267513" target="_blank">Shopee</a> · <a href="https://www.lazada.com.my/products/syb-170-mini-solderless-breadboard-170-tie-points-for-arduino-raspberry-pi-diy-multicolor-linkable-i498292674-s916412660.html" target="_blank">Lazada</a> |
+| 3 | Jumper wires (x4) | RM 2 - RM 5 | <a href="https://shopee.com.my/40pcs-Dupont-Wire-10cm-20cm-30cm-for-Breadboard-DIY-Experiment-Jumper-Wire-Breadboard-wire-i.1165814930.24676987244" target="_blank">MakerHub</a> · <a href="https://www.lazada.com.my/products/dupont-jumper-wire-20cm-breadboard-jumper-cable-male-to-male-female-to-female-male-to-female-i493040156.html" target="_blank">Lazada</a> |
+| 4 | Micro USB cable | RM 2 - RM 5 | <a href="https://shopee.com.my/Data-Cable-Type-A-Type-C-MicroUSB-Type-B-0.5m-1m-30cm-0.3m-100cm-Data-Transfer-Upload-Code-i.1165814930.29671198885" target="_blank">MakerHub</a> · <a href="https://www.lazada.com.my/products/micro-usb-20-cable-supports-data-transfer-2a-charging-i4399210443-s24697036848.html" target="_blank">Lazada</a> |
+| 5 | Rechargeable AA batteries | RM 8 - RM 15 | <a href="https://shopee.com.my/Rechargeable-AA-Battery-1.2V-NiMH-High-Capacity-2000mAh-3000mAh-Long-Life-Battery-for-Electronics-DIY-Projects-i.1165814930.29534820333" target="_blank">MakerHub</a> |
+| 6 | AA battery holder (3-slot) | RM 2 - RM 5 | <a href="https://makerhub.my/shop/electrical/aa-battery-holder-with-cover-on-off-switch-2-3-4-slots-battery-aa-holder-red-black-wire/" target="_blank">MakerHub</a> |
+| 7 | Traffic cone (30") | RM 20 - RM 30 | <a href="https://shopee.com.my/30-inch-Safety-Traffic-Pvc-Cone-Kon-Keselamatan-Jalan-Raya-30inci''(READY-STOCK)-i.195518124.7007655240" target="_blank">Shopee</a> · <a href="https://www.lazada.com.my/products/30-safety-traffic-pvc-conekon-keselamatan-jalan-raya-i1591694210.html" target="_blank">Lazada</a> |
+| 8 | Mini breadboard | RM 3 - RM 10 | <a href="https://shopee.com.my/MB102-Breadboard-170-400-830-Holes-Breadboard-Donut-Board-Arduino-Prototype-Multi-Color-i.1165814930.25477002583" target="_blank">MakerHub</a> · <a href="https://www.lazada.com.my/products/syb-170-mini-solderless-breadboard-170-tie-points-for-arduino-raspberry-pi-diy-multicolor-linkable-i498292674-s916412660.html" target="_blank">Lazada</a> |
 
 ### Optional
 
@@ -145,9 +146,10 @@ Topic: `smartcones/{cone_id}/event`
 | MPU6050 (GY-521) | RM 10 |
 | Mini breadboard + jumper wires | RM 8 |
 | Micro USB cable | RM 3 |
-| USB power bank (mini) | RM 20 |
+| Rechargeable AA batteries | RM 10 |
+| AA battery holder (3-slot) | RM 3 |
 | Traffic cone (30") | RM 25 |
-| **Total** | **~RM 81** |
+| **Total** | **~RM 74** |
 
 > Optional add-ons: LED module (~RM 3), buzzer (~RM 3), GPS NEO-6M (~RM 40).
 
