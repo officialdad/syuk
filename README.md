@@ -52,9 +52,20 @@ ESP32            MPU6050
 GND   ────────►  GND
 GPIO21 (SDA) ──► SDA
 GPIO22 (SCL) ──► SCL
+
+ESP32            KY-016 RGB LED
+─────            ──────────────
+GPIO16 ────────► R
+GPIO17 ────────► G
+GND    ────────► GND (-)
+
+ESP32            Active Buzzer
+─────            ─────────────
+GPIO19 ────────► Signal (+)
+GND    ────────► GND (-)
 ```
 
-No soldering needed. MPU6050 module has built-in pull-up resistors.
+No soldering needed. All modules connect via jumper wires (M-F).
 
 ---
 
