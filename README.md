@@ -49,12 +49,20 @@ A cone embedded with a sensor that detects impact/knockover and instantly sends 
 ### Wiring
 
 ```
+Power: MB102 Power Supply Module
+────────────────────────────────
+4x AA battery holder ──► MB102 USB input (4.8V)
+MB102 output set to 3.3V → powers breadboard rails
+ESP32 3.3V pin ◄──────── breadboard + rail
+ESP32 GND pin  ◄──────── breadboard - rail
+
 ESP32            MPU6050              (M-M 20cm, both on breadboard)
 ─────            ───────
 3.3V  ────────►  VCC
 GND   ────────►  GND
 GPIO21 (SDA) ──► SDA
 GPIO22 (SCL) ──► SCL
+GND   ────────►  AD0                  (prevents I2C address floating)
 
 ESP32            KY-016 RGB LED       (M-F 30cm, LED at top of cone)
 ─────            ──────────────
@@ -70,12 +78,15 @@ GND    ────────► GND (-)
 
 > **Assembly notes:**
 > - Solder header pins onto MPU6050 module before use (comes unsoldered)
-> - MB102 power supply plugs directly onto the breadboard power rails
-> - 4x AA batteries (4.8V) connect to power supply via USB or DC jack — set output to 3.3V
+> - Wire MPU6050 AD0 pin to GND — locks I2C address to 0x68 (prevents random failures)
+> - MB102 power supply plugs directly onto the breadboard power rails, set jumper to 3.3V
+> - 4x AA NiMH batteries (4.8V) connect to MB102 via USB — powers entire breadboard
+> - All components share the same GND rail on the breadboard (critical)
 > - ESP32 + MPU6050 + buzzer sit on the 400-hole breadboard at the cone base
 > - LED module mounts at the top of the cone with 30cm M-F wires running down inside
-> - Hot glue LED module to cone top and secure wire connections after final assembly
-> - M-M wires for breadboard connections, M-F wires for reaching the LED
+> - Hot glue LED module to cone top and secure all wire connections after final assembly
+> - Push jumper wires in firmly — loose I2C connections cause garbage data, not clean errors
+> - KY-016 RGB LED has built-in resistors, no external resistors needed
 
 ---
 
@@ -186,3 +197,13 @@ Topic: `smartcones/{cone_id}/event`
 - Fleet dashboard with GPS tracking across job sites
 - Automated incident reports for insurance/compliance
 - Solar charging for long-term deployment
+
+---
+
+## References
+
+- <a href="https://randomnerdtutorials.com/esp32-mpu-6050-accelerometer-gyroscope-arduino/" target="_blank">ESP32 + MPU6050 Wiring Guide — Random Nerd Tutorials</a>
+- <a href="https://randomnerdtutorials.com/esp32-pinout-reference-gpios/" target="_blank">ESP32 Pinout Reference — Random Nerd Tutorials</a>
+- <a href="https://lastminuteengineers.com/esp32-pinout-reference/" target="_blank">ESP32 Pinout Reference — Last Minute Engineers</a>
+- <a href="https://www.espboards.dev/sensors/ky-016/" target="_blank">KY-016 RGB LED + ESP32 Wiring — espboards.dev</a>
+- <a href="https://www.instructables.com/Connecting-MPU6050-With-ESP32/" target="_blank">Connecting MPU6050 with ESP32 — Instructables</a>
