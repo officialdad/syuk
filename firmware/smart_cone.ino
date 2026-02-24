@@ -125,6 +125,9 @@ void loop() {
     case UPRIGHT:
       setLED(false, true); // Green
 
+      // Skip detection while buzzer is vibrating (prevents false triggers)
+      if (buzzerActive) break;
+
       // Check for impact
       if (magnitude > IMPACT_THRESHOLD_G) {
         Serial.println("\n*** IMPACT DETECTED! ***\n");

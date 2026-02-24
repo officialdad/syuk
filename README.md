@@ -27,11 +27,12 @@ A cone embedded with a sensor that detects impact/knockover and instantly sends 
 | 3 | Jumper wires (M-M, 20cm, 40pcs pack) | RM 2 - RM 5 | <a href="https://shopee.com.my/40pcs-Dupont-Wire-10cm-20cm-30cm-for-Breadboard-DIY-Experiment-Jumper-Wire-Breadboard-wire-i.1165814930.24676987244" target="_blank">MakerHub</a> |
 | 4 | Jumper wires (M-F, 30cm, 40pcs pack) | RM 2 - RM 5 | <a href="https://shopee.com.my/40pcs-Dupont-Wire-10cm-20cm-30cm-for-Breadboard-DIY-Experiment-Jumper-Wire-Breadboard-wire-i.1165814930.24676987244" target="_blank">MakerHub</a> |
 | 5 | Data cable (Type-A to Micro USB, 0.5m-1m) | RM 2 - RM 5 | <a href="https://shopee.com.my/Data-Cable-Type-A-Type-C-MicroUSB-Type-B-0.5m-1m-30cm-0.3m-100cm-Data-Transfer-Upload-Code-i.1165814930.29671198885" target="_blank">MakerHub</a> |
-| 6 | Rechargeable AA batteries | RM 8 - RM 15 | <a href="https://shopee.com.my/Rechargeable-AA-Battery-1.2V-NiMH-High-Capacity-2000mAh-3000mAh-Long-Life-Battery-for-Electronics-DIY-Projects-i.1165814930.29534820333" target="_blank">MakerHub</a> |
-| 7 | AA battery holder (3-slot) | RM 2 - RM 5 | <a href="https://makerhub.my/shop/electrical/aa-battery-holder-with-cover-on-off-switch-2-3-4-slots-battery-aa-holder-red-black-wire/" target="_blank">MakerHub</a> |
-| 8 | Soldering iron + solder | RM 15 - RM 30 |
-| 9 | Traffic cone (30") | RM 20 - RM 30 | <a href="https://shopee.com.my/30-inch-Safety-Traffic-Pvc-Cone-Kon-Keselamatan-Jalan-Raya-30inci''(READY-STOCK)-i.195518124.7007655240" target="_blank">Shopee</a> |
-| 10 | Breadboard (400 holes) | RM 5 - RM 12 | <a href="https://shopee.com.my/MB102-Breadboard-170-400-830-Holes-Breadboard-Donut-Board-Arduino-Prototype-Multi-Color-i.1165814930.25477002583" target="_blank">MakerHub</a> |
+| 6 | Rechargeable AA batteries (x4, 2000mAh) | RM 8 - RM 15 | <a href="https://shopee.com.my/Rechargeable-AA-Battery-1.2V-NiMH-High-Capacity-2000mAh-3000mAh-Long-Life-Battery-for-Electronics-DIY-Projects-i.1165814930.29534820333" target="_blank">MakerHub</a> |
+| 7 | AA battery holder (4-slot) | RM 2 - RM 5 | <a href="https://shopee.com.my/product/1165814930/25014699466" target="_blank">MakerHub</a> |
+| 8 | MB102 breadboard power supply | RM 5 - RM 10 | <a href="https://shopee.com.my/product/1165814930/25978692975" target="_blank">MakerHub</a> |
+| 9 | Soldering iron + solder | RM 15 - RM 30 | — |
+| 10 | Traffic cone (30") | RM 20 - RM 30 | <a href="https://shopee.com.my/30-inch-Safety-Traffic-Pvc-Cone-Kon-Keselamatan-Jalan-Raya-30inci''(READY-STOCK)-i.195518124.7007655240" target="_blank">Shopee</a> |
+| 11 | Breadboard (400 holes) | RM 5 - RM 12 | <a href="https://shopee.com.my/MB102-Breadboard-170-400-830-Holes-Breadboard-Donut-Board-Arduino-Prototype-Multi-Color-i.1165814930.25477002583" target="_blank">MakerHub</a> |
 
 ### Optional
 
@@ -69,9 +70,12 @@ GND    ────────► GND (-)
 
 > **Assembly notes:**
 > - Solder header pins onto MPU6050 module before use (comes unsoldered)
+> - MB102 power supply plugs directly onto the breadboard power rails
+> - 4x AA batteries (4.8V) connect to power supply via USB or DC jack — set output to 3.3V
 > - ESP32 + MPU6050 + buzzer sit on the 400-hole breadboard at the cone base
 > - LED module mounts at the top of the cone with 30cm M-F wires running down inside
-> - M-M wires for breadboard-to-breadboard connections, M-F wires for reaching the LED
+> - Hot glue LED module to cone top and secure wire connections after final assembly
+> - M-M wires for breadboard connections, M-F wires for reaching the LED
 
 ---
 
@@ -162,13 +166,14 @@ Topic: `smartcones/{cone_id}/event`
 | ESP32 dev board | RM 15 |
 | MPU6050 (GY-521) | RM 10 |
 | Breadboard (400 holes) | RM 8 |
+| MB102 power supply module | RM 7 |
 | Jumper wires (M-M + M-F) | RM 8 |
 | Micro USB cable | RM 3 |
 | Soldering iron + solder | RM 20 |
-| Rechargeable AA batteries | RM 10 |
-| AA battery holder (3-slot) | RM 3 |
+| Rechargeable AA batteries (x4) | RM 12 |
+| AA battery holder (4-slot) | RM 3 |
 | Traffic cone (30") | RM 25 |
-| **Total** | **~RM 102** |
+| **Total** | **~RM 111** |
 
 > Optional add-ons: LED module (~RM 3), buzzer (~RM 3), GPS NEO-6M (~RM 40).
 
