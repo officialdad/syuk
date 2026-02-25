@@ -56,13 +56,13 @@ MB102 output set to 3.3V → powers breadboard rails
 ESP32 3.3V pin ◄──────── breadboard + rail
 ESP32 GND pin  ◄──────── breadboard - rail
 
-ESP32            MPU6050              (M-M 20cm, both on breadboard)
-─────            ───────
-3.3V  ────────►  VCC
-GND   ────────►  GND
-GPIO21 (SDA) ──► SDA
-GPIO22 (SCL) ──► SCL
-GND   ────────►  AD0                  (prevents I2C address floating)
+ESP32 → GY-521 (MPU6050)            (M-M, both on 400-hole breadboard)
+─────────────────────────
+Wire  | Color | From (ESP32) | To (GY-521)
+3.3V  | Black | a5           | e30
+GND   | Brown | a6           | e29
+D21   | White | a15 (SDA)    | e27 (SDA)
+D22   | Red   | a18 (SCL)    | e28 (SCL)
 
 ESP32            KY-016 RGB LED       (M-F 30cm, LED at top of cone)
 ─────            ──────────────
@@ -78,7 +78,7 @@ GND    ────────► GND (-)
 
 > **Assembly notes:**
 > - Solder header pins onto MPU6050 module before use (comes unsoldered)
-> - Wire MPU6050 AD0 pin to GND — locks I2C address to 0x68 (prevents random failures)
+> - GY-521 has built-in pull-down on AD0 — no need to wire it (defaults to I2C address 0x68)
 > - MB102 power supply plugs directly onto the breadboard power rails, set jumper to 3.3V
 > - 4x AA NiMH batteries (4.8V) connect to MB102 via USB — powers entire breadboard
 > - All components share the same GND rail on the breadboard (critical)
