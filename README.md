@@ -49,6 +49,9 @@ A cone embedded with a sensor that detects impact/knockover and instantly sends 
 ### Wiring
 
 ```
+400-Hole Breadboard Layout
+══════════════════════════
+
 Power: MB102 Power Supply Module
 ────────────────────────────────
 4x AA battery holder ──► MB102 USB input (4.8V)
@@ -56,24 +59,50 @@ MB102 output set to 3.3V → powers breadboard rails
 ESP32 3.3V pin ◄──────── breadboard + rail
 ESP32 GND pin  ◄──────── breadboard - rail
 
-ESP32 → GY-521 (MPU6050)            (M-M, both on 400-hole breadboard)
-─────────────────────────
+   +  -   a · · · e   f · · · j   +  -
+   ┊  ┊   ┌───────────────────┐   ┊  ┊
+   ┊  ┊  5│ 3V3 ■ ESP32  ■ VIN│   ┊  ┊
+   ┊  ┊  6│ GND ■       ■ GND │   ┊  ┊
+   ┊  ┊  7│ D15 ■       ■ D13 │   ┊  ┊
+   ┊  ┊  8│  D2 ■       ■ D12 │   ┊  ┊
+   ┊  ┊  9│  D4 ■       ■ D14 │   ┊  ┊
+   ┊  ┊ 10│ RX2 ■       ■ D27 │   ┊  ┊
+   ┊  ┊ 11│ TX2 ■       ■ D26 │   ┊  ┊
+   ┊  ┊ 12│  D5 ■       ■ D25 │   ┊  ┊
+   ┊  ┊ 13│ D18 ■       ■ D33 │   ┊  ┊
+   ┊  ┊ 14│ D19 ■       ■ D32 │   ┊  ┊
+   ┊  ┊ 15│ D21 ■       ■ D35 │   ┊  ┊
+   ┊  ┊ 16│ RX0 ■       ■ D34 │   ┊  ┊
+   ┊  ┊ 17│ TX0 ■       ■  VN │   ┊  ┊
+   ┊  ┊ 18│ D22 ■       ■  VP │   ┊  ┊
+   ┊  ┊ 19│ D23 ■       ■  EN │   ┊  ┊
+   ┊  ┊   └───────────────────┘   ┊  ┊
+   ┊  ┊                            ┊  ┊
+   ┊  ┊      GY-521 (MPU6050)      ┊  ┊
+   ┊  ┊ 27│  · · · SDA · │         ┊  ┊
+   ┊  ┊ 28│  · · · SCL · │         ┊  ┊
+   ┊  ┊ 29│  · · · GND · │         ┊  ┊
+   ┊  ┊ 30│  · · · VCC · │         ┊  ┊
+   ┊  ┊                            ┊  ┊
+
+ESP32 → GY-521 Wires (M-M 20cm)
+────────────────────────────────
 Wire  | Color | From (ESP32) | To (GY-521)
-3.3V  | Black | a5           | e30
-GND   | Brown | a6           | e29
+3V3   | Black | a5           | e30 (VCC)
+GND   | Brown | a6           | e29 (GND)
 D21   | White | a15 (SDA)    | e27 (SDA)
 D22   | Red   | a18 (SCL)    | e28 (SCL)
 
-ESP32            KY-016 RGB LED       (M-F 30cm, LED at top of cone)
-─────            ──────────────
-GPIO16 ────────► R
-GPIO17 ────────► G
-GND    ────────► GND (-)
+ESP32 → KY-016 RGB LED (M-F 30cm, LED at top of cone)
+──────────────────────────────────────────────────────
+D16   | a?  ────────► R
+D17   | a?  ────────► G
+GND   | a?  ────────► GND (-)
 
-ESP32            Active Buzzer        (M-M 20cm, stays at base)
-─────            ─────────────
-GPIO19 ────────► Signal (+)
-GND    ────────► GND (-)
+ESP32 → Active Buzzer (M-M 20cm, stays at base)
+────────────────────────────────────────────────
+D19   | a14 ────────► Signal (+)
+GND   | -rail ──────► GND (-)
 ```
 
 > **Assembly notes:**
