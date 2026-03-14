@@ -33,11 +33,26 @@
   const coneStates = {}; // { cone_id: { state, online, marker, lat, lng, label } }
 
   // --- Map Setup ---
-  const map = L.map('map').setView([3.139, 101.6869], 15); // Default: KL
+  let userLat = 3.139, userLng = 101.6869; // Fallback: KL
+  const map = L.map('map').setView([userLat, userLng], 15);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors',
     maxZoom: 19,
   }).addTo(map);
+
+  // Auto-pan to user's GPS location
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+      // Only pan if no cones loaded yet (otherwise fitBounds handles it)
+      if (Object.keys(coneStates).length === 0) {
+        map.setView([userLat, userLng], 16);
+      }
+    },
+    () => {}, // Silently fall back to default
+    { enableHighAccuracy: true, timeout: 15000 }
+  );
 
   // Marker colors based on state
   function markerIcon(state, online) {
@@ -216,6 +231,7 @@
           });
           addConeToMap(id, lat, lng, label);
           updateStats();
+          map.setView([lat, lng], 17);
           gpsStatus.textContent = `Cone "${id}" placed successfully!`;
           newConeIdInput.value = '';
           newConeLabelInput.value = '';
@@ -231,15 +247,15 @@
   });
 
   // --- Cone Simulator ---
-  // Real cone placed alongside simulated ones for demo
-  const REAL_CONE = { cone_id: 'cone-001', lat: 3.1392, lng: 101.6868, label: 'Zone A - Main Gate' };
-
-  const SIM_CONES = [
-    { cone_id: 'sim-001', lat: 3.1395, lng: 101.6875, label: 'Zone A - Entry' },
-    { cone_id: 'sim-002', lat: 3.1388, lng: 101.6862, label: 'Zone A - Mid' },
-    { cone_id: 'sim-003', lat: 3.1382, lng: 101.6870, label: 'Zone B - South' },
-    { cone_id: 'sim-004', lat: 3.1400, lng: 101.6858, label: 'Zone B - North' },
-  ];
+  // Generate sim cones relative to a base position (real cone or user GPS)
+  function generateSimCones(baseLat, baseLng) {
+    return [
+      { cone_id: 'sim-001', lat: baseLat + 0.0003, lng: baseLng + 0.0006, label: 'Zone A - Entry' },
+      { cone_id: 'sim-002', lat: baseLat - 0.0004, lng: baseLng - 0.0007, label: 'Zone A - Mid' },
+      { cone_id: 'sim-003', lat: baseLat - 0.0008, lng: baseLng + 0.0002, label: 'Zone B - South' },
+      { cone_id: 'sim-004', lat: baseLat + 0.0008, lng: baseLng - 0.0010, label: 'Zone B - North' },
+    ];
+  }
 
   btnSimulator.addEventListener('click', async () => {
     if (simulatorRunning) {
@@ -254,22 +270,33 @@
     btnSimulator.textContent = 'Stop Simulator';
     btnSimulator.classList.add('active');
 
-    // Place real cone on map first
-    try {
-      await fetch('/api/cones', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(REAL_CONE),
-      });
-      addConeToMap(REAL_CONE.cone_id, REAL_CONE.lat, REAL_CONE.lng, REAL_CONE.label);
-      coneStates[REAL_CONE.cone_id].online = true;
-      updateMarker(REAL_CONE.cone_id);
-    } catch (err) {
-      console.error('Failed to place real cone:', err);
+    // Determine base position: use real cone if placed, otherwise user GPS
+    const realCone = coneStates['cone-001'];
+    const baseLat = realCone ? realCone.lat : userLat;
+    const baseLng = realCone ? realCone.lng : userLng;
+
+    // If real cone not on map yet, place it at base position
+    if (!realCone) {
+      const rc = { cone_id: 'cone-001', lat: baseLat, lng: baseLng, label: 'Zone A - Main Gate' };
+      try {
+        await fetch('/api/cones', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(rc),
+        });
+        addConeToMap(rc.cone_id, rc.lat, rc.lng, rc.label);
+        coneStates[rc.cone_id].online = true;
+        updateMarker(rc.cone_id);
+      } catch (err) {
+        console.error('Failed to place real cone:', err);
+      }
     }
 
+    // Generate sim cones near the real cone / user position
+    const simCones = generateSimCones(baseLat, baseLng);
+
     // Place simulated cones on map via API
-    for (const sim of SIM_CONES) {
+    for (const sim of simCones) {
       try {
         await fetch('/api/cones', {
           method: 'POST',
@@ -294,7 +321,7 @@
 
     // Randomly trigger events
     simulatorInterval = setInterval(() => {
-      const sim = SIM_CONES[Math.floor(Math.random() * SIM_CONES.length)];
+      const sim = simCones[Math.floor(Math.random() * simCones.length)];
       const events = ['impact', 'knockover'];
       const event = events[Math.floor(Math.random() * events.length)];
       const accelG = (Math.random() * 5 + 2).toFixed(2);
