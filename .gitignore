@@ -5,3 +5,4 @@ firmware/smart_cone/secrets.h
 .dolt/
 *.db
 .dev.vars
+docs/superpowers/
