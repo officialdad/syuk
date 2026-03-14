@@ -1,0 +1,10 @@
+name = "smartcone-dashboard"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+assets = { directory = "public" }
+
+[vars]
+MQTT_BROKER_WSS = "wss://placeholder.hivemq.cloud:8884/mqtt"
+MQTT_USER = "placeholder"
+MQTT_PASSWORD = "placeholder"

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Cone Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>Smart Cone Dashboard</h1>
+    <div class="connection-status">
+      <span id="connection-dot" class="dot disconnected"></span>
+      <span id="connection-text">Disconnected</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="cone-status-card" id="cone-status-card">
+      <h2>Cone Status</h2>
+      <div class="status-body">
+        <div class="state-display">
+          <span class="label">State</span>
+          <span id="cone-state" class="state upright">UPRIGHT</span>
+        </div>
+        <div class="status-details">
+          <div class="detail">
+            <span class="label">Cone ID</span>
+            <span id="cone-id">--</span>
+          </div>
+          <div class="detail">
+            <span class="label">Last Update</span>
+            <span id="last-update">--</span>
+          </div>
+          <div class="detail">
+            <span class="label">Device</span>
+            <span id="device-status" class="offline">Offline</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chart-container">
+      <h2>Acceleration (g)</h2>
+      <canvas id="accelChart"></canvas>
+    </section>
+
+    <section class="event-log-card">
+      <h2>Event Log</h2>
+      <div class="table-wrapper">
+        <table id="event-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Event Type</th>
+              <th>Accel (g)</th>
+              <th>Tilt (deg)</th>
+              <th>Cone ID</th>
+            </tr>
+          </thead>
+          <tbody id="event-tbody">
+          </tbody>
+        </table>
+        <p id="no-events" class="empty-msg">No events received yet.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

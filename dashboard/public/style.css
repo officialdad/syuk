@@ -1,0 +1,263 @@
+/* Reset & base */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #0f172a;
+  color: #e2e8f0;
+  min-height: 100vh;
+}
+
+/* Header */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+}
+
+header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.dot.connected {
+  background: #22c55e;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.dot.disconnected {
+  background: #ef4444;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+}
+
+/* Main layout */
+main {
+  max-width: 960px;
+  margin: 1.5rem auto;
+  padding: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Cards */
+.cone-status-card,
+.event-log-card {
+  background: #1e293b;
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid #334155;
+}
+
+h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Cone status */
+.status-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.state-display {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.state {
+  font-size: 1.5rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.state.upright {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.state.impact_alert {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.state.knocked_over {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.status-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detail span:last-child {
+  font-size: 0.95rem;
+}
+
+#device-status.online {
+  color: #22c55e;
+}
+
+#device-status.offline {
+  color: #ef4444;
+}
+
+/* Event log table */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+thead th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #334155;
+  color: #94a3b8;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #1e293b;
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid #0f172a;
+}
+
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.empty-msg {
+  text-align: center;
+  color: #475569;
+  padding: 2rem 0;
+  font-size: 0.875rem;
+}
+
+/* Event type badges */
+.event-badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.event-badge.impact {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.event-badge.knocked_over {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.event-badge.recovery {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.event-badge.default {
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.15);
+}
+
+/* Chart */
+.chart-container {
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.chart-container h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: #94a3b8;
+}
+.chart-container canvas {
+  width: 100% !important;
+  max-height: 300px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  header {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+
+  .status-body {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .status-details {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  main {
+    margin: 1rem auto;
+  }
+}
