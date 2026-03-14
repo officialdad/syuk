@@ -19,6 +19,7 @@ unsigned long alertStartTime = 0;
 unsigned long buzzerStartTime = 0;
 bool buzzerActive = false;
 bool tiltTimerRunning = false;
+bool mqttConnected = false;
 
 // --- Helper Functions ---
 
@@ -59,7 +60,7 @@ void setup() {
   // Init LED pins
   pinMode(LED_RED_PIN, OUTPUT);
   pinMode(LED_GREEN_PIN, OUTPUT);
-  setLED(true, true); // Yellow = initializing
+  setLED(true, false); // Red = initializing / not connected
 
   // Init buzzer pin
   pinMode(BUZZER_PIN, OUTPUT);
@@ -94,11 +95,12 @@ void setup() {
   bool wifiOk = setupWiFi();
   setupMQTT();
 
-  if (wifiOk) {
-    setLED(false, true); // Green = connected & ready
-    Serial.println("WiFi ready — LED green");
+  if (wifiOk && mqttReconnect()) {
+    mqttConnected = true;
+    setLED(false, true); // Green = WiFi + MQTT connected
+    Serial.println("WiFi + MQTT ready — LED green");
   } else {
-    Serial.println("Offline mode — LED stays yellow");
+    Serial.println("Not fully connected — LED stays yellow");
   }
 
   Serial.println("\nSmart Cone ready!\n");
@@ -110,6 +112,15 @@ void setup() {
 
 void loop() {
   mqttLoop();
+
+  // Track MQTT connection state for LED
+  bool wasConnected = mqttConnected;
+  mqttConnected = mqttClient.connected();
+  if (mqttConnected && !wasConnected) {
+    Serial.println("MQTT connected — LED green");
+  } else if (!mqttConnected && wasConnected) {
+    Serial.println("MQTT disconnected — LED yellow");
+  }
 
   // Read sensor
   sensors_event_t accel, gyro, temp;
@@ -138,7 +149,11 @@ void loop() {
   switch (state) {
 
     case UPRIGHT:
-      setLED(false, true); // Green
+      if (mqttConnected) {
+        setLED(false, true); // Green = connected
+      } else {
+        setLED(true, false); // Red = not connected
+      }
 
       // Skip detection while buzzer is vibrating (prevents false triggers)
       if (buzzerActive) break;

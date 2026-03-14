@@ -46,10 +46,12 @@ bool mqttReconnect() {
   Serial.print("...");
 
   String clientId = "smartcone-" + String(CONE_ID);
-  if (mqttClient.connect(clientId.c_str(), MQTT_USER, MQTT_PASSWORD)) {
+  char statusTopic[64];
+  snprintf(statusTopic, sizeof(statusTopic), MQTT_TOPIC_STATUS, CONE_ID);
+  // LWT: broker publishes "offline" if device disconnects unexpectedly
+  if (mqttClient.connect(clientId.c_str(), MQTT_USER, MQTT_PASSWORD,
+                         statusTopic, 0, true, "{\"status\":\"offline\"}")) {
     Serial.println(" connected!");
-    char statusTopic[64];
-    snprintf(statusTopic, sizeof(statusTopic), MQTT_TOPIC_STATUS, CONE_ID);
     mqttClient.publish(statusTopic, "{\"status\":\"online\"}", true);
     return true;
   } else {
