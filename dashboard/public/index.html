@@ -6,12 +6,14 @@
   <title>Smart Cone Dashboard</title>
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 </head>
 <body>
   <header>
     <h1>Smart Cone Dashboard</h1>
     <div class="connection-status">
       <span id="connection-dot" class="dot connecting"></span>
+      <i class="fa-solid fa-tower-broadcast"></i>
       <span id="connection-text">Connecting...</span>
     </div>
   </header>
@@ -19,25 +21,37 @@
   <main>
     <section class="stats-bar">
       <div class="stat">
+        <span class="stat-icon"><i class="fa-solid fa-road-barrier"></i></span>
         <span class="stat-value" id="stat-total">0</span>
         <span class="stat-label">Total Cones</span>
       </div>
       <div class="stat">
+        <span class="stat-icon"><i class="fa-solid fa-wifi"></i></span>
         <span class="stat-value" id="stat-online">0</span>
         <span class="stat-label">Online</span>
       </div>
       <div class="stat">
+        <span class="stat-icon"><i class="fa-solid fa-bell"></i></span>
         <span class="stat-value" id="stat-alerts">0</span>
         <span class="stat-label">Alerts Today</span>
       </div>
       <div class="stat">
+        <span class="stat-icon"><i class="fa-solid fa-clock"></i></span>
         <span class="stat-value" id="stat-last-incident">--</span>
         <span class="stat-label">Last Incident</span>
       </div>
     </section>
 
+    <section id="fleet-list" class="fleet-list hidden">
+      <div class="fleet-list-header">
+        <h3>All Cones</h3>
+        <button id="fleet-list-close" class="btn btn-outline btn-sm">✕</button>
+      </div>
+      <div id="fleet-list-body" class="fleet-list-body"></div>
+    </section>
+
     <section class="cone-status-card" id="cone-status-card">
-      <h2>Cone Status</h2>
+      <h2><i class="fa-solid fa-triangle-exclamation"></i> Latest Alert</h2>
       <div class="status-body">
         <div class="state-display">
           <span class="label">State</span>
@@ -62,10 +76,10 @@
 
     <section class="map-container">
       <div class="map-header">
-        <h2>Fleet Map</h2>
+        <h2><i class="fa-solid fa-map-location-dot"></i> Fleet Map</h2>
         <div class="map-controls">
-          <button id="btn-setup-mode" class="btn btn-outline">Setup Mode</button>
-          <button id="btn-simulator" class="btn btn-outline">Start Simulator</button>
+          <button id="btn-setup-mode" class="btn btn-outline"><i class="fa-solid fa-gear"></i> Setup Mode</button>
+          <button id="btn-simulator" class="btn btn-outline"><i class="fa-solid fa-play"></i> Start Simulator</button>
         </div>
       </div>
       <div id="map"></div>
@@ -74,14 +88,14 @@
         <div class="setup-form">
           <input type="text" id="new-cone-id" placeholder="Cone ID (e.g. cone-002)" />
           <input type="text" id="new-cone-label" placeholder="Label (e.g. Zone A - Entry)" />
-          <button id="btn-place-cone" class="btn btn-primary">Use My GPS Location</button>
+          <button id="btn-place-cone" class="btn btn-primary"><i class="fa-solid fa-location-crosshairs"></i> Use My GPS Location</button>
           <p id="gps-status" class="gps-status"></p>
         </div>
       </div>
     </section>
 
     <section class="event-log-card">
-      <h2>Event Log</h2>
+      <h2><i class="fa-solid fa-list"></i> Event Log</h2>
       <div class="table-wrapper">
         <table id="event-table">
           <thead>
@@ -97,6 +111,37 @@
           </tbody>
         </table>
         <p id="no-events" class="empty-msg">No events received yet.</p>
+      </div>
+    </section>
+
+    <section id="detail-panel" class="detail-panel hidden">
+      <div class="detail-panel-header">
+        <h3 id="detail-cone-id">--</h3>
+        <button id="detail-close" class="btn btn-outline btn-sm">✕</button>
+      </div>
+      <div class="detail-panel-body">
+        <div class="detail-row">
+          <span class="detail-label">State</span>
+          <span id="detail-state" class="state upright">--</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Device</span>
+          <span id="detail-online">--</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Location</span>
+          <span id="detail-label">--</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Coordinates</span>
+          <span id="detail-coords">--</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Last Event</span>
+          <span id="detail-last-event">--</span>
+        </div>
+        <h4>Recent Events</h4>
+        <div id="detail-events" class="detail-events"></div>
       </div>
     </section>
   </main>

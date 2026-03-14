@@ -177,7 +177,11 @@
     const tdEvent = document.createElement('td');
     const badge = document.createElement('span');
     badge.className = 'event-badge ' + (eventType === 'impact' ? 'impact' : eventType === 'knockover' ? 'knocked_over' : 'default');
-    badge.textContent = eventType;
+    let badgeIcon = '';
+    if (eventType === 'impact') badgeIcon = '<i class="fa-solid fa-bolt"></i> ';
+    else if (eventType === 'knockover') badgeIcon = '<i class="fa-solid fa-triangle-exclamation"></i> ';
+    else if (eventType === 'recovery') badgeIcon = '<i class="fa-solid fa-check"></i> ';
+    badge.innerHTML = badgeIcon + eventType;
     tdEvent.appendChild(badge);
 
     const tdAccel = document.createElement('td');
@@ -206,7 +210,7 @@
   btnSetupMode.addEventListener('click', () => {
     setupMode = !setupMode;
     btnSetupMode.classList.toggle('active', setupMode);
-    btnSetupMode.textContent = setupMode ? 'Exit Setup' : 'Setup Mode';
+    btnSetupMode.innerHTML = setupMode ? '<i class="fa-solid fa-xmark"></i> Exit Setup' : '<i class="fa-solid fa-gear"></i> Setup Mode';
     setupPanel.classList.toggle('hidden', !setupMode);
   });
 
@@ -261,13 +265,13 @@
     if (simulatorRunning) {
       clearInterval(simulatorInterval);
       simulatorRunning = false;
-      btnSimulator.textContent = 'Start Simulator';
+      btnSimulator.innerHTML = '<i class="fa-solid fa-play"></i> Start Simulator';
       btnSimulator.classList.remove('active');
       return;
     }
 
     simulatorRunning = true;
-    btnSimulator.textContent = 'Stop Simulator';
+    btnSimulator.innerHTML = '<i class="fa-solid fa-stop"></i> Stop Simulator';
     btnSimulator.classList.add('active');
 
     // Determine base position: use real cone if placed, otherwise user GPS
@@ -287,6 +291,7 @@
         addConeToMap(rc.cone_id, rc.lat, rc.lng, rc.label);
         coneStates[rc.cone_id].online = true;
         updateMarker(rc.cone_id);
+        attachMarkerClick(rc.cone_id);
       } catch (err) {
         console.error('Failed to place real cone:', err);
       }
@@ -307,6 +312,7 @@
         // Set them online
         coneStates[sim.cone_id].online = true;
         updateMarker(sim.cone_id);
+        attachMarkerClick(sim.cone_id);
       } catch (err) {
         console.error('Failed to place sim cone:', err);
       }
@@ -340,6 +346,7 @@
             coneStates[sim.cone_id].state = 'UPRIGHT';
             updateMarker(sim.cone_id);
             addEventRow(new Date(), 'recovery', null, null, sim.cone_id);
+            recordConeEvent(sim.cone_id, 'recovery', null, null);
           }
         }, 5000);
       }
@@ -351,11 +358,14 @@
 
       // Add to event log
       addEventRow(now, event, accelG, tiltDeg, sim.cone_id);
+      recordConeEvent(sim.cone_id, event, accelG, tiltDeg);
+      attachMarkerClick(sim.cone_id);
     }, 4000); // Event every 4 seconds
   });
 
   // --- Load cones and start MQTT ---
   await loadCones();
+  Object.keys(coneStates).forEach(attachMarkerClick);
 
   let config;
   try {
@@ -438,6 +448,8 @@
 
       // Add to event log
       addEventRow(now, eventType, accelG, tiltDeg, eventConeId);
+      recordConeEvent(eventConeId, eventType, accelG, tiltDeg);
+      attachMarkerClick(eventConeId);
 
     } else if (topicType === 'status') {
       const online = payload.status === 'online';
@@ -455,5 +467,129 @@
       }
       updateStats();
     }
+  });
+  // --- Detail Panel ---
+  const detailPanel = document.getElementById('detail-panel');
+  const detailClose = document.getElementById('detail-close');
+  const detailConeId = document.getElementById('detail-cone-id');
+  const detailState = document.getElementById('detail-state');
+  const detailOnline = document.getElementById('detail-online');
+  const detailLabelEl = document.getElementById('detail-label');
+  const detailCoords = document.getElementById('detail-coords');
+  const detailLastEvent = document.getElementById('detail-last-event');
+  const detailEvents = document.getElementById('detail-events');
+
+  // Track events per cone for detail view
+  const coneEventHistory = {}; // { cone_id: [{time, event, accelG, tiltDeg}] }
+
+  function showConeDetail(id) {
+    const cone = coneStates[id];
+    if (!cone) return;
+
+    detailConeId.textContent = id;
+    const stateClass = STATE_MAP[cone.state] || 'upright';
+    detailState.className = 'state ' + stateClass;
+    detailState.textContent = cone.state || 'UPRIGHT';
+    detailOnline.textContent = cone.online ? 'Online' : 'Offline';
+    detailOnline.style.color = cone.online ? '#22c55e' : '#ef4444';
+    detailLabelEl.textContent = cone.label || '--';
+    detailCoords.textContent = cone.lat && cone.lng ? `${cone.lat.toFixed(6)}, ${cone.lng.toFixed(6)}` : '--';
+
+    // Show recent events for this cone
+    const history = coneEventHistory[id] || [];
+    detailLastEvent.textContent = history.length > 0 ? `${history[0].event} at ${history[0].time}` : '--';
+    detailEvents.innerHTML = '';
+    history.slice(0, 10).forEach(evt => {
+      const div = document.createElement('div');
+      div.className = 'detail-event-item';
+      div.textContent = `${evt.time} — ${evt.event}${evt.accelG != null ? ` (${evt.accelG}g)` : ''}`;
+      detailEvents.appendChild(div);
+    });
+
+    detailPanel.classList.remove('hidden');
+  }
+
+  detailClose.addEventListener('click', () => {
+    detailPanel.classList.add('hidden');
+  });
+
+  function attachMarkerClick(id) {
+    const cone = coneStates[id];
+    if (cone && cone.marker) {
+      cone.marker.off('click');
+      cone.marker.on('click', () => showConeDetail(id));
+    }
+  }
+
+  function recordConeEvent(coneId, eventType, accelG, tiltDeg) {
+    if (!coneEventHistory[coneId]) coneEventHistory[coneId] = [];
+    coneEventHistory[coneId].unshift({
+      time: formatTime(new Date()),
+      event: eventType,
+      accelG: accelG != null ? Number(accelG).toFixed(2) : null,
+      tiltDeg: tiltDeg != null ? Number(tiltDeg).toFixed(1) : null,
+    });
+    // Keep max 20 events per cone
+    if (coneEventHistory[coneId].length > 20) coneEventHistory[coneId].pop();
+
+    // Update detail panel if it's showing this cone
+    if (!detailPanel.classList.contains('hidden') && detailConeId.textContent === coneId) {
+      showConeDetail(coneId);
+    }
+  }
+
+  // --- Fleet List ---
+  const fleetList = document.getElementById('fleet-list');
+  const fleetListBody = document.getElementById('fleet-list-body');
+  const fleetListClose = document.getElementById('fleet-list-close');
+  const statTotalEl = document.getElementById('stat-total').closest('.stat');
+
+  function renderFleetList() {
+    fleetListBody.innerHTML = '';
+    const ids = Object.keys(coneStates).sort();
+    ids.forEach(id => {
+      const cone = coneStates[id];
+      const row = document.createElement('div');
+      row.className = 'fleet-list-row';
+
+      const name = document.createElement('span');
+      name.className = 'cone-name';
+      name.textContent = id;
+
+      const location = document.createElement('span');
+      location.className = 'cone-location';
+      location.textContent = cone.label || '--';
+
+      const badge = document.createElement('span');
+      let badgeClass = 'upright';
+      if (!cone.online) badgeClass = 'offline';
+      else if (cone.state === 'KNOCKED_OVER') badgeClass = 'knocked_over';
+      else if (cone.state === 'IMPACT_ALERT') badgeClass = 'impact_alert';
+      badge.className = 'cone-state-badge ' + badgeClass;
+      badge.textContent = cone.online ? (cone.state || 'UPRIGHT') : 'OFFLINE';
+
+      row.append(name, location, badge);
+      row.addEventListener('click', () => {
+        if (cone.marker) map.setView(cone.marker.getLatLng(), 17);
+        showConeDetail(id);
+        fleetList.classList.add('hidden');
+      });
+      fleetListBody.appendChild(row);
+    });
+  }
+
+  statTotalEl.style.cursor = 'pointer';
+  statTotalEl.addEventListener('click', () => {
+    const isVisible = !fleetList.classList.contains('hidden');
+    if (isVisible) {
+      fleetList.classList.add('hidden');
+    } else {
+      renderFleetList();
+      fleetList.classList.remove('hidden');
+    }
+  });
+
+  fleetListClose.addEventListener('click', () => {
+    fleetList.classList.add('hidden');
   });
 })();
