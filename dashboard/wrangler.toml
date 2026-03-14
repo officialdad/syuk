@@ -8,3 +8,7 @@ assets = { directory = "public" }
 MQTT_BROKER_WSS = "wss://placeholder.hivemq.cloud:8884/mqtt"
 MQTT_USER = "placeholder"
 MQTT_PASSWORD = "placeholder"
+
+[[kv_namespaces]]
+binding = "CONE_LOCATIONS"
+id = "placeholder"

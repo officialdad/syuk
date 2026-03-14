@@ -5,17 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Cone Dashboard</title>
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
   <header>
     <h1>Smart Cone Dashboard</h1>
     <div class="connection-status">
-      <span id="connection-dot" class="dot disconnected"></span>
-      <span id="connection-text">Disconnected</span>
+      <span id="connection-dot" class="dot connecting"></span>
+      <span id="connection-text">Connecting...</span>
     </div>
   </header>
 
   <main>
+    <section class="stats-bar">
+      <div class="stat">
+        <span class="stat-value" id="stat-total">0</span>
+        <span class="stat-label">Total Cones</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="stat-online">0</span>
+        <span class="stat-label">Online</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="stat-alerts">0</span>
+        <span class="stat-label">Alerts Today</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="stat-last-incident">--</span>
+        <span class="stat-label">Last Incident</span>
+      </div>
+    </section>
+
     <section class="cone-status-card" id="cone-status-card">
       <h2>Cone Status</h2>
       <div class="status-body">
@@ -40,9 +60,24 @@
       </div>
     </section>
 
-    <section class="chart-container">
-      <h2>Acceleration (g)</h2>
-      <canvas id="accelChart"></canvas>
+    <section class="map-container">
+      <div class="map-header">
+        <h2>Fleet Map</h2>
+        <div class="map-controls">
+          <button id="btn-setup-mode" class="btn btn-outline">Setup Mode</button>
+          <button id="btn-simulator" class="btn btn-outline">Start Simulator</button>
+        </div>
+      </div>
+      <div id="map"></div>
+      <div id="setup-panel" class="setup-panel hidden">
+        <h3>Place Cone</h3>
+        <div class="setup-form">
+          <input type="text" id="new-cone-id" placeholder="Cone ID (e.g. cone-002)" />
+          <input type="text" id="new-cone-label" placeholder="Label (e.g. Zone A - Entry)" />
+          <button id="btn-place-cone" class="btn btn-primary">Use My GPS Location</button>
+          <p id="gps-status" class="gps-status"></p>
+        </div>
+      </div>
     </section>
 
     <section class="event-log-card">
@@ -66,9 +101,7 @@
     </section>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <script src="/app.js"></script>
 </body>

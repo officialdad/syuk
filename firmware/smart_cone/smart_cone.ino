@@ -191,6 +191,7 @@ void loop() {
       // Wait for cooldown, then return to upright
       if (millis() - alertStartTime >= ALERT_COOLDOWN_MS) {
         Serial.println("\n--- Cooldown complete, resuming monitoring ---\n");
+        publishEvent("recovery", magnitude, tiltDeg);
         state = UPRIGHT;
       }
       break;
@@ -199,6 +200,7 @@ void loop() {
       // Wait for recovery (tilt back below recovery threshold)
       if (tiltDeg < TILT_RECOVERY_DEG) {
         Serial.println("\n--- Cone recovered! Back upright ---\n");
+        publishEvent("recovery", magnitude, tiltDeg);
         state = UPRIGHT;
       }
       break;
