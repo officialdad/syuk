@@ -59,7 +59,7 @@ void setup() {
   // Init LED pins
   pinMode(LED_RED_PIN, OUTPUT);
   pinMode(LED_GREEN_PIN, OUTPUT);
-  setLED(false, true); // Green = upright
+  setLED(true, true); // Yellow = initializing
 
   // Init buzzer pin
   pinMode(BUZZER_PIN, OUTPUT);
@@ -87,15 +87,23 @@ void setup() {
   mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
 
   Serial.println("MPU6050 OK");
-  Serial.println("LED OK (green)");
+  Serial.println("LED OK (yellow = initializing)");
   Serial.println("Buzzer OK");
+
+  // Phase 2: Connectivity
+  bool wifiOk = setupWiFi();
+  setupMQTT();
+
+  if (wifiOk) {
+    setLED(false, true); // Green = connected & ready
+    Serial.println("WiFi ready — LED green");
+  } else {
+    Serial.println("Offline mode — LED stays yellow");
+  }
+
   Serial.println("\nSmart Cone ready!\n");
   Serial.println("Accel X(g) | Y(g)  | Z(g)  | Mag(g) | Tilt(°) | State");
   Serial.println("---------- | ----- | ----- | ------ | ------- | -----");
-
-  // Phase 2: Connectivity
-  setupWiFi();
-  setupMQTT();
 }
 
 // --- Main Loop ---

@@ -14,16 +14,17 @@ PubSubClient mqttClient(espClient);
 
 unsigned long lastMqttReconnect = 0;
 
-void setupWiFi() {
+bool setupWiFi() {
   WiFiManager wm;
   wm.setConfigPortalTimeout(180);
   Serial.println("WiFi: Starting WiFiManager...");
   if (!wm.autoConnect(WIFI_AP_NAME)) {
     Serial.println("WiFi: Failed to connect. Continuing offline.");
-    return;
+    return false;
   }
   Serial.print("WiFi: Connected! IP: ");
   Serial.println(WiFi.localIP());
+  return true;
 }
 
 void setupMQTT() {
