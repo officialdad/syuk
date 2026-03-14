@@ -1,4 +1,5 @@
 .env
+firmware/smart_cone/secrets.h
 
 # Dolt database files (added by bd init)
 .dolt/

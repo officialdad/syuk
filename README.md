@@ -22,11 +22,11 @@ A cone embedded with a sensor that detects impact/knockover and instantly sends 
 
 | # | Component | Est. Price (MYR) | Links |
 |---|-----------|-------------------|-------|
-| 1 | ESP32 dev board (CH340, Micro USB) | RM 8 - RM 40 | <a href="https://shopee.com.my/NodeMCU-ESP32-Wi-Fi-Bluetooth-Development-Board-CH340-CP2012-For-IOT-Project-i.1165814930.22789260417" target="_blank">MakerHub</a> |
+| 1 | ESP32 dev board (CH340, USB-C) | RM 8 - RM 40 | <a href="https://shopee.com.my/NodeMCU-ESP32-Wi-Fi-Bluetooth-Development-Board-CH340-CP2012-For-IOT-Project-i.1165814930.22789260417" target="_blank">MakerHub</a> |
 | 2 | MPU6050 module (GY-521) | RM 9 - RM 16 | <a href="https://shopee.com.my/GY-521-Gyroscope-Accelerometer-Module-MPU6050-MPU-6050-Motion-Measurement-Drone-Robotic-Application-i.1165814930.25564691626" target="_blank">MakerHub</a> |
 | 3 | Jumper wires (M-M, 20cm, 40pcs pack) | RM 2 - RM 5 | <a href="https://shopee.com.my/40pcs-Dupont-Wire-10cm-20cm-30cm-for-Breadboard-DIY-Experiment-Jumper-Wire-Breadboard-wire-i.1165814930.24676987244" target="_blank">MakerHub</a> |
 | 4 | Jumper wires (M-F, 30cm, 40pcs pack) | RM 2 - RM 5 | <a href="https://shopee.com.my/40pcs-Dupont-Wire-10cm-20cm-30cm-for-Breadboard-DIY-Experiment-Jumper-Wire-Breadboard-wire-i.1165814930.24676987244" target="_blank">MakerHub</a> |
-| 5 | Data cable (Type-A to Micro USB, 0.5m-1m) | RM 2 - RM 5 | <a href="https://shopee.com.my/Data-Cable-Type-A-Type-C-MicroUSB-Type-B-0.5m-1m-30cm-0.3m-100cm-Data-Transfer-Upload-Code-i.1165814930.29671198885" target="_blank">MakerHub</a> |
+| 5 | Data cable (Type-A to USB-C, 0.5m-1m) | RM 2 - RM 5 | <a href="https://shopee.com.my/Data-Cable-Type-A-Type-C-MicroUSB-Type-B-0.5m-1m-30cm-0.3m-100cm-Data-Transfer-Upload-Code-i.1165814930.29671198885" target="_blank">MakerHub</a> |
 | 6 | Rechargeable AA batteries (x4, 2000mAh) | RM 8 - RM 15 | <a href="https://shopee.com.my/Rechargeable-AA-Battery-1.2V-NiMH-High-Capacity-2000mAh-3000mAh-Long-Life-Battery-for-Electronics-DIY-Projects-i.1165814930.29534820333" target="_blank">MakerHub</a> |
 | 7 | AA battery holder (4-slot) | RM 2 - RM 5 | <a href="https://shopee.com.my/product/1165814930/25014699466" target="_blank">MakerHub</a> |
 | 8 | MB102 breadboard power supply | RM 5 - RM 10 | <a href="https://shopee.com.my/product/1165814930/25978692975" target="_blank">MakerHub</a> |
@@ -132,10 +132,11 @@ ESP32 + MPU6050
 
 ### Firmware (ESP32)
 
-- Arduino / PlatformIO (C++)
+- Arduino (C++), managed via `arduino-cli`
 - Read accelerometer via I2C
 - Detect impact (acceleration > 3g) or tilt (> 45 degrees sustained)
 - Publish MQTT message on event
+- Sketch location: `firmware/smart_cone/smart_cone.ino`
 
 ### Notifications
 
@@ -208,7 +209,7 @@ Topic: `smartcones/{cone_id}/event`
 | Breadboard (400 holes) | RM 8 |
 | MB102 power supply module | RM 7 |
 | Jumper wires (M-M + M-F) | RM 8 |
-| Micro USB cable | RM 3 |
+| USB-C data cable | RM 3 |
 | Soldering iron + solder | RM 20 |
 | Rechargeable AA batteries (x4) | RM 12 |
 | AA battery holder (4-slot) | RM 3 |
@@ -226,6 +227,103 @@ Topic: `smartcones/{cone_id}/event`
 - Fleet dashboard with GPS tracking across job sites
 - Automated incident reports for insurance/compliance
 - Solar charging for long-term deployment
+
+---
+
+## Firmware Runbook (CLI)
+
+Step-by-step commands to set up, compile, and flash the firmware without the Arduino IDE GUI.
+
+### 1. Install arduino-cli
+
+```bash
+mkdir -p ~/.local/bin
+curl -fsSL https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_64bit.tar.gz \
+  -o /tmp/arduino-cli.tar.gz
+tar -xzf /tmp/arduino-cli.tar.gz -C ~/.local/bin arduino-cli
+```
+
+Verify: `~/.local/bin/arduino-cli version`
+
+> Add `~/.local/bin` to your `PATH` if not already there, or use the full path.
+
+### 2. Install ESP32 board support & libraries
+
+```bash
+# Add ESP32 board URL and install core
+arduino-cli config init
+arduino-cli config add board_manager.additional_urls \
+  https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+arduino-cli core update-index
+arduino-cli core install esp32:esp32
+
+# Install required libraries
+arduino-cli lib install "Adafruit MPU6050" "Adafruit Unified Sensor"
+```
+
+### 3. Serial port permissions
+
+The ESP32 (CH340 chip) shows up as `/dev/ttyUSB0`. It requires `dialout` group membership:
+
+```bash
+# Check if port exists
+ls /dev/ttyUSB*
+
+# Add yourself to dialout group (one-time, requires logout or newgrp)
+sudo usermod -aG dialout $USER
+newgrp dialout
+
+# Verify
+groups  # should include 'dialout'
+```
+
+### 4. Compile
+
+```bash
+arduino-cli compile --fqbn esp32:esp32:esp32 firmware/smart_cone/
+```
+
+### 5. Flash
+
+```bash
+arduino-cli upload --fqbn esp32:esp32:esp32 --port /dev/ttyUSB0 firmware/smart_cone/
+```
+
+> If upload gets stuck at "Connecting...", hold the **BOOT** button on the ESP32.
+
+### 6. Monitor serial output
+
+```bash
+# Option A: arduino-cli monitor
+arduino-cli monitor --port /dev/ttyUSB0 --config baudrate=115200
+
+# Option B: raw serial
+stty -F /dev/ttyUSB0 115200 raw -echo
+cat /dev/ttyUSB0
+```
+
+Expected output at 115200 baud:
+
+```
+=== Smart Cone v1.0 ===
+MPU6050 OK
+LED OK (green)
+Buzzer OK
+Smart Cone ready!
+
+Accel X(g) | Y(g)  | Z(g)  | Mag(g) | Tilt(°) | State
+      0.12 | -0.05 |  1.10 |   1.11 |     6.9 | UPRIGHT
+```
+
+### Quick reference
+
+| Task | Command |
+|------|---------|
+| Compile | `arduino-cli compile --fqbn esp32:esp32:esp32 firmware/smart_cone/` |
+| Flash | `arduino-cli upload --fqbn esp32:esp32:esp32 --port /dev/ttyUSB0 firmware/smart_cone/` |
+| Monitor | `arduino-cli monitor --port /dev/ttyUSB0 --config baudrate=115200` |
+| List boards | `arduino-cli board list` |
+| List libraries | `arduino-cli lib list` |
 
 ---
 
