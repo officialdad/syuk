@@ -43,18 +43,22 @@
     </section>
 
     <div class="shortcuts">
-      <a href="/hazards.html" target="_blank" class="shortcut-pill">
-        <i class="fa-solid fa-map-location-dot"></i> Public Hazard Map
-      </a>
-      <a href="/cifs-viewer.html" target="_blank" class="shortcut-pill">
-        <i class="fa-solid fa-rss"></i> CIFS Feed Viewer
-      </a>
-      <a href="/api/feed/cifs.xml" target="_blank" class="shortcut-pill">
-        <i class="fa-solid fa-code"></i> CIFS XML
-      </a>
-      <a href="/api/feed/cifs.json" target="_blank" class="shortcut-pill">
-        <i class="fa-solid fa-file-code"></i> CIFS JSON
-      </a>
+      <div class="shortcuts-row shortcuts-main">
+        <a href="/hazards.html" class="shortcut-pill shortcut-pill-lg">
+          <i class="fa-solid fa-map-location-dot"></i> Public Hazard Map
+        </a>
+        <a href="/cifs-viewer.html" class="shortcut-pill shortcut-pill-lg">
+          <i class="fa-solid fa-rss"></i> CIFS Feed Viewer
+        </a>
+      </div>
+      <div class="shortcuts-row">
+        <a href="/api/feed/cifs.xml" target="_blank" class="shortcut-pill">
+          <i class="fa-solid fa-code"></i> CIFS XML
+        </a>
+        <a href="/api/feed/cifs.json" target="_blank" class="shortcut-pill">
+          <i class="fa-solid fa-file-code"></i> CIFS JSON
+        </a>
+      </div>
     </div>
 
     <section id="fleet-list" class="fleet-list hidden">
@@ -160,6 +164,10 @@
       </div>
     </section>
   </main>
+
+  <footer class="site-footer">
+    &copy; Smart Cone 2026. All Rights Reserved.
+  </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>

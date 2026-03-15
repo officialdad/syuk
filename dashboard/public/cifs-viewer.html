@@ -140,6 +140,17 @@
           <span class="status-value" id="last-updated">--</span>
         </div>
       </div>
+      <p style="font-size:0.8rem;color:#64748b;margin:1rem 0 0.5rem;text-transform:uppercase;letter-spacing:0.05em;">Feed Endpoints</p>
+      <div class="endpoint">
+        <span class="endpoint-label">XML</span>
+        <span class="endpoint-url" id="xml-url"></span>
+        <button class="copy-btn" onclick="copyText(document.getElementById('xml-url').textContent)"><i class="fa-solid fa-copy"></i> Copy</button>
+      </div>
+      <div class="endpoint">
+        <span class="endpoint-label">JSON</span>
+        <span class="endpoint-url" id="json-url"></span>
+        <button class="copy-btn" onclick="copyText(document.getElementById('json-url').textContent)"><i class="fa-solid fa-copy"></i> Copy</button>
+      </div>
     </div>
 
     <!-- Feed preview -->
@@ -157,21 +168,6 @@
       </div>
     </div>
 
-    <!-- Endpoint URLs -->
-    <div class="card">
-      <h2><i class="fa-solid fa-link"></i> Feed Endpoints</h2>
-      <p style="font-size:0.85rem;color:#94a3b8;margin-bottom:1rem;">Share these URLs with your Waze for Cities representative or traffic management system.</p>
-      <div class="endpoint">
-        <span class="endpoint-label">XML</span>
-        <span class="endpoint-url" id="xml-url"></span>
-        <button class="copy-btn" onclick="copyText(document.getElementById('xml-url').textContent)"><i class="fa-solid fa-copy"></i> Copy</button>
-      </div>
-      <div class="endpoint">
-        <span class="endpoint-label">JSON</span>
-        <span class="endpoint-url" id="json-url"></span>
-        <button class="copy-btn" onclick="copyText(document.getElementById('json-url').textContent)"><i class="fa-solid fa-copy"></i> Copy</button>
-      </div>
-    </div>
   </main>
 
   <script>
@@ -258,5 +254,8 @@
     loadFeeds();
     setInterval(loadFeeds, 30000);
   </script>
+  <footer style="text-align:center;padding:1.5rem;color:#475569;font-size:0.75rem;border-top:1px solid #1e293b;margin-top:2rem;">
+    &copy; Smart Cone 2026. All Rights Reserved.
+  </footer>
 </body>
 </html>

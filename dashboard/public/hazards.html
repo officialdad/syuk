@@ -12,7 +12,7 @@
     header { padding: 1rem 1.5rem; background: #1e293b; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
     header h1 { font-size: 1.1rem; }
     header .badge { background: #ef4444; color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.8rem; font-weight: 600; }
-    #map { height: calc(100vh - 120px); }
+    #map { height: calc(100vh - 160px); }
     .info-bar { padding: 0.75rem 1.5rem; background: #1e293b; border-bottom: 1px solid #334155; font-size: 0.85rem; color: #94a3b8; display: flex; gap: 1.5rem; flex-wrap: wrap; }
     .info-item { display: flex; align-items: center; gap: 0.4rem; }
     .info-item i { color: #64748b; }
@@ -20,6 +20,9 @@
 </head>
 <body>
   <header>
+    <a href="/" style="color:#3b82f6;text-decoration:none;font-size:0.8rem;display:inline-flex;align-items:center;gap:0.3rem;margin-bottom:0.5rem;">
+      <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+    </a>
     <h1><i class="fa-solid fa-triangle-exclamation"></i> Road Hazard Alert</h1>
     <span class="badge" id="status-badge">Loading...</span>
   </header>
@@ -101,5 +104,8 @@
     loadHazards();
     setInterval(loadHazards, 30000); // Refresh every 30s
   </script>
+  <footer style="text-align:center;padding:1.5rem;color:#475569;font-size:0.75rem;border-top:1px solid #1e293b;margin-top:0;">
+    &copy; Smart Cone 2026. All Rights Reserved.
+  </footer>
 </body>
 </html>
