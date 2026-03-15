@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CIFS Data Feed — Smart Cone</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+    /* Header */
+    header { padding: 1.25rem 1.5rem; background: #1e293b; border-bottom: 1px solid #334155; }
+    header h1 { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.25rem; }
+    header p { font-size: 0.85rem; color: #94a3b8; }
+    .back-link { color: #3b82f6; text-decoration: none; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.3rem; margin-bottom: 0.5rem; }
+    .back-link:hover { color: #60a5fa; }
+
+    /* Main */
+    main { max-width: 900px; margin: 1.5rem auto; padding: 0 1rem; display: flex; flex-direction: column; gap: 1.5rem; }
+
+    /* Cards */
+    .card { background: #1e293b; border-radius: 0.75rem; padding: 1.25rem 1.5rem; border: 1px solid #334155; }
+    .card h2 { font-size: 1rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+    .card h2 i { margin-right: 0.4rem; }
+
+    /* Flow diagram */
+    .flow { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0.5rem; padding: 1.5rem 0; }
+    .flow-step { background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.75rem 1rem; text-align: center; min-width: 130px; }
+    .flow-step i { display: block; font-size: 1.5rem; margin-bottom: 0.4rem; color: #3b82f6; }
+    .flow-step span { font-size: 0.8rem; color: #cbd5e1; }
+    .flow-arrow { color: #475569; font-size: 1.2rem; }
+
+    /* Explanation */
+    .explanation { font-size: 0.9rem; color: #cbd5e1; line-height: 1.6; }
+    .explanation strong { color: #e2e8f0; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 0; margin-bottom: 0; }
+    .tab { padding: 0.6rem 1.25rem; font-size: 0.85rem; font-weight: 500; cursor: pointer; border: 1px solid #334155; background: #0f172a; color: #64748b; transition: all 0.2s; border-bottom: none; }
+    .tab:first-child { border-radius: 0.5rem 0 0 0; }
+    .tab:last-child { border-radius: 0 0.5rem 0 0; }
+    .tab.active { background: #1e293b; color: #e2e8f0; border-bottom-color: #1e293b; }
+    .tab i { margin-right: 0.3rem; }
+
+    /* Code block */
+    .code-wrapper { position: relative; background: #0f172a; border: 1px solid #334155; border-radius: 0 0.5rem 0.5rem 0.5rem; overflow: hidden; }
+    .code-block { padding: 1rem; overflow-x: auto; max-height: 400px; overflow-y: auto; }
+    .code-block pre { font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace; font-size: 0.8rem; line-height: 1.5; color: #cbd5e1; white-space: pre; margin: 0; }
+    .copy-btn { position: absolute; top: 0.5rem; right: 0.5rem; background: #334155; color: #94a3b8; border: none; padding: 0.4rem 0.8rem; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; transition: all 0.2s; z-index: 1; }
+    .copy-btn:hover { background: #475569; color: #e2e8f0; }
+    .copy-btn.copied { background: #22c55e; color: white; }
+
+    /* Endpoint URLs */
+    .endpoint { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: #0f172a; border-radius: 0.5rem; border: 1px solid #334155; margin-bottom: 0.5rem; }
+    .endpoint-url { flex: 1; font-family: monospace; font-size: 0.82rem; color: #3b82f6; word-break: break-all; }
+    .endpoint-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; min-width: 40px; }
+    .endpoint .copy-btn { position: static; }
+
+    /* Status bar */
+    .status-bar { display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.85rem; }
+    .status-item { display: flex; align-items: center; gap: 0.4rem; }
+    .status-item i { color: #64748b; }
+    .status-value { color: #e2e8f0; font-weight: 600; }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .flow { flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .endpoint { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+    <h1><i class="fa-solid fa-rss"></i> CIFS Data Feed — Waze Integration</h1>
+    <p>Citizen Incident Feed Specification for navigation system integration</p>
+  </header>
+
+  <main>
+    <!-- What is CIFS -->
+    <div class="card">
+      <h2><i class="fa-solid fa-circle-info"></i> What is CIFS?</h2>
+      <div class="explanation">
+        <p>The <strong>Citizen Incident Feed Specification (CIFS)</strong> is the standard data format used by <strong>Waze</strong> and <strong>Google Maps</strong> to receive road closure and incident data from external sources.</p>
+        <br>
+        <p>When Smart Cones are deployed at a construction site, our system <strong>automatically generates a CIFS-compatible feed</strong> containing the road closure data. This feed can be submitted to Waze's partner program, enabling real-time road hazard alerts to reach millions of drivers through their navigation apps — <strong>without any manual reporting</strong>.</p>
+      </div>
+    </div>
+
+    <!-- How it works flow -->
+    <div class="card">
+      <h2><i class="fa-solid fa-diagram-project"></i> How It Works</h2>
+      <div class="flow">
+        <div class="flow-step">
+          <i class="fa-solid fa-road-barrier"></i>
+          <span>Cones Deployed</span>
+        </div>
+        <span class="flow-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+        <div class="flow-step">
+          <i class="fa-solid fa-satellite-dish"></i>
+          <span>GPS + MQTT</span>
+        </div>
+        <span class="flow-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+        <div class="flow-step">
+          <i class="fa-solid fa-rss"></i>
+          <span>CIFS Feed Generated</span>
+        </div>
+        <span class="flow-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+        <div class="flow-step">
+          <i class="fa-brands fa-waze"></i>
+          <span>Waze / Google Maps</span>
+        </div>
+        <span class="flow-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+        <div class="flow-step">
+          <i class="fa-solid fa-car"></i>
+          <span>Drivers Alerted</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live status -->
+    <div class="card">
+      <h2><i class="fa-solid fa-signal"></i> Current Status</h2>
+      <div class="status-bar">
+        <div class="status-item">
+          <i class="fa-solid fa-road-barrier"></i>
+          <span>Cones:</span>
+          <span class="status-value" id="cone-count">--</span>
+        </div>
+        <div class="status-item">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>Hazard Zones:</span>
+          <span class="status-value" id="zone-count">--</span>
+        </div>
+        <div class="status-item">
+          <i class="fa-solid fa-clock"></i>
+          <span>Last Updated:</span>
+          <span class="status-value" id="last-updated">--</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feed preview -->
+    <div class="card">
+      <h2><i class="fa-solid fa-eye"></i> Live Feed Preview</h2>
+      <div class="tabs">
+        <div class="tab active" data-tab="xml"><i class="fa-solid fa-code"></i> XML</div>
+        <div class="tab" data-tab="json"><i class="fa-solid fa-file-code"></i> JSON</div>
+      </div>
+      <div class="code-wrapper">
+        <button class="copy-btn" id="copy-feed"><i class="fa-solid fa-copy"></i> Copy</button>
+        <div class="code-block">
+          <pre id="feed-content">Loading...</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Endpoint URLs -->
+    <div class="card">
+      <h2><i class="fa-solid fa-link"></i> Feed Endpoints</h2>
+      <p style="font-size:0.85rem;color:#94a3b8;margin-bottom:1rem;">Share these URLs with your Waze for Cities representative or traffic management system.</p>
+      <div class="endpoint">
+        <span class="endpoint-label">XML</span>
+        <span class="endpoint-url" id="xml-url"></span>
+        <button class="copy-btn" onclick="copyText(document.getElementById('xml-url').textContent)"><i class="fa-solid fa-copy"></i> Copy</button>
+      </div>
+      <div class="endpoint">
+        <span class="endpoint-label">JSON</span>
+        <span class="endpoint-url" id="json-url"></span>
+        <button class="copy-btn" onclick="copyText(document.getElementById('json-url').textContent)"><i class="fa-solid fa-copy"></i> Copy</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let activeTab = 'xml';
+    let feedData = { xml: '', json: '' };
+
+    // Set endpoint URLs
+    const baseUrl = window.location.origin;
+    document.getElementById('xml-url').textContent = baseUrl + '/api/feed/cifs.xml';
+    document.getElementById('json-url').textContent = baseUrl + '/api/feed/cifs.json';
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        activeTab = tab.dataset.tab;
+        document.getElementById('feed-content').textContent = feedData[activeTab] || 'Loading...';
+      });
+    });
+
+    // Copy button
+    document.getElementById('copy-feed').addEventListener('click', async function() {
+      await copyText(feedData[activeTab]);
+      this.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+      this.classList.add('copied');
+      setTimeout(() => {
+        this.innerHTML = '<i class="fa-solid fa-copy"></i> Copy';
+        this.classList.remove('copied');
+      }, 2000);
+    });
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (e) {
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      // Flash the clicked copy-btn if it's an endpoint one
+      const btn = event && event.currentTarget;
+      if (btn && btn.classList.contains('copy-btn') && btn !== document.getElementById('copy-feed')) {
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy';
+          btn.classList.remove('copied');
+        }, 2000);
+      }
+    }
+
+    async function loadFeeds() {
+      try {
+        // Fetch XML
+        const xmlRes = await fetch('/api/feed/cifs.xml');
+        feedData.xml = await xmlRes.text();
+
+        // Fetch JSON
+        const jsonRes = await fetch('/api/feed/cifs.json');
+        const jsonObj = await jsonRes.json();
+        feedData.json = JSON.stringify(jsonObj, null, 2);
+
+        // Update display
+        document.getElementById('feed-content').textContent = feedData[activeTab];
+
+        // Update status
+        const coneCount = jsonObj.incidents && jsonObj.incidents.length > 0
+          ? (jsonObj.incidents[0].polyline || '').split(' ').length / 2
+          : 0;
+        document.getElementById('cone-count').textContent = Math.floor(coneCount);
+        document.getElementById('zone-count').textContent = jsonObj.incidents ? jsonObj.incidents.length : 0;
+        document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+      } catch (err) {
+        console.error('Failed to load feeds:', err);
+        document.getElementById('feed-content').textContent = 'Failed to load feed data.';
+      }
+    }
+
+    loadFeeds();
+    setInterval(loadFeeds, 30000);
+  </script>
+</body>
+</html>

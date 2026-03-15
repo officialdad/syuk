@@ -91,43 +91,67 @@ app.get('/api/feed/cifs.xml', async (c) => {
   let incidents = '';
 
   if (cones.length >= 1) {
-    const lats = cones.map(c => c.lat);
-    const lngs = cones.map(c => c.lng);
-    const centerLat = ((Math.min(...lats) + Math.max(...lats)) / 2).toFixed(6);
-    const centerLng = ((Math.min(...lngs) + Math.max(...lngs)) / 2).toFixed(6);
-    const type = cones.length >= 3 ? 'ROAD_CLOSED' : 'CONSTRUCTION';
     const polyline = cones.map(c => `${c.lat.toFixed(6)} ${c.lng.toFixed(6)}`).join(' ');
+    const street = cones[0].label || 'Construction Zone';
+    const starttime = cones.reduce((earliest, c) => c.placed_at < earliest ? c.placed_at : earliest, cones[0].placed_at);
+    const description = `Smart Cone monitored work zone - ${cones.length} cones deployed`;
 
     incidents = `
-    <incident id="smartcone-zone-1">
-      <type>${type}</type>
-      <subtype>${type === 'ROAD_CLOSED' ? 'ROAD_CLOSED_EVENT' : 'ROAD_CONSTRUCTION'}</subtype>
-      <description>Smart Cone monitored work zone - ${cones.length} cones deployed</description>
-      <direction>BOTH_DIRECTIONS</direction>
-      <polyline>${polyline}</polyline>
-      <location>
-        <latitude>${centerLat}</latitude>
-        <longitude>${centerLng}</longitude>
-      </location>
-      <starttime>${cones[0].placed_at}</starttime>
-      <updatetime>${now}</updatetime>
-      <severity>Minor</severity>
-      <creationtime>${cones[0].placed_at}</creationtime>
-    </incident>`;
+  <incident id="smartcone-zone-1">
+    <type>ROAD_CLOSED</type>
+    <subtype>ROAD_CLOSED_CONSTRUCTION</subtype>
+    <polyline>${polyline}</polyline>
+    <street>${street}</street>
+    <direction>BOTH_DIRECTIONS</direction>
+    <description>${description}</description>
+    <starttime>${starttime}</starttime>
+    <updatetime>${now}</updatetime>
+    <creationtime>${starttime}</creationtime>
+  </incident>`;
   }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<incidents timestamp="${now}">
-  <feed_info>
-    <feed_id>smartcone-feed</feed_id>
-    <feed_name>Smart Cone Traffic Hazards</feed_name>
-    <update_frequency>60</update_frequency>
-  </feed_info>${incidents}
+<incidents xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" timestamp="${now}">${incidents}
 </incidents>`;
 
   return new Response(xml, {
     headers: { 'Content-Type': 'application/xml; charset=utf-8' },
   });
+});
+
+// GET /api/feed/cifs.json — Waze-compatible CIFS JSON feed
+app.get('/api/feed/cifs.json', async (c) => {
+  const list = await c.env.CONE_LOCATIONS.list({ prefix: 'cone:' });
+  const cones = (await Promise.all(
+    list.keys.map(async (key) => {
+      const value = await c.env.CONE_LOCATIONS.get(key.name, 'json');
+      return value;
+    })
+  )).filter(Boolean) as Array<{cone_id: string; lat: number; lng: number; label: string; placed_at: string}>;
+
+  const now = new Date().toISOString();
+  const incidents: Array<Record<string, string>> = [];
+
+  if (cones.length >= 1) {
+    const polyline = cones.map(c => `${c.lat.toFixed(6)} ${c.lng.toFixed(6)}`).join(' ');
+    const street = cones[0].label || 'Construction Zone';
+    const starttime = cones.reduce((earliest, c) => c.placed_at < earliest ? c.placed_at : earliest, cones[0].placed_at);
+
+    incidents.push({
+      id: 'smartcone-zone-1',
+      type: 'ROAD_CLOSED',
+      subtype: 'ROAD_CLOSED_CONSTRUCTION',
+      polyline,
+      street,
+      direction: 'BOTH_DIRECTIONS',
+      description: `Smart Cone monitored work zone - ${cones.length} cones deployed`,
+      starttime,
+      updatetime: now,
+      creationtime: starttime,
+    });
+  }
+
+  return c.json({ incidents });
 });
 
 app.get('/api/config', (c) => {

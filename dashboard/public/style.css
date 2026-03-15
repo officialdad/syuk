@@ -545,6 +545,38 @@ h2 i {
 .cone-state-badge.knocked_over { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
 .cone-state-badge.offline { color: #6b7280; background: rgba(107, 114, 128, 0.1); }
 
+/* Shortcut pills */
+.shortcuts {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.shortcut-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 2rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #94a3b8;
+  background: #1e293b;
+  border: 1px solid #334155;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.shortcut-pill:hover {
+  background: #334155;
+  color: #e2e8f0;
+  border-color: #475569;
+}
+
+.shortcut-pill i {
+  font-size: 0.7rem;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   header {
