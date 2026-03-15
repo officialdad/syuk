@@ -1,336 +1,305 @@
-# Smart Cone — IoT Competition Project
+# Smart Cone — IoT Cone Knockover Detection
 
 ## Problem
 
-Construction work zones have no way to detect when safety cones are knocked over or hit. Breaches go unnoticed, putting workers at risk and leaving zero documentation for incidents.
+Construction work zones have no way to detect when safety cones are knocked over or hit. Breaches go unnoticed, putting workers at risk and leaving zero documentation for incidents. Navigation apps like Waze only learn about closures when a driver manually reports it.
 
 ## Solution
 
-A cone embedded with a sensor that detects impact/knockover and instantly sends a push notification + updates a live dashboard.
+An ESP32-powered traffic cone that detects impact/knockover in real-time, sends push notifications, updates a live fleet dashboard, and auto-generates navigation system hazard feeds (Waze CIFS).
 
 ## Demo Flow
 
-1. Knock the cone over
-2. Phone buzzes with an alert
-3. Dashboard goes red in real-time
+1. Place cones at a site using Setup Mode (phone GPS captures locations)
+2. Knock a cone over → buzzer sounds, LED turns red
+3. Phone buzzes with Ntfy push notification
+4. Dashboard map marker goes red in real-time
+5. CIFS feed auto-updates — ready for Waze/Google Maps integration
+6. Stand cone back up → recovery event, marker returns to green
+
+---
+
+## Architecture
+
+```
+ESP32 + MPU6050 + Buzzer + LED
+    │
+    ├──► WiFi (WiFiManager captive portal)
+    │
+    └──► MQTT over TLS (HiveMQ Cloud)
+            │
+            ├──► smartcones/{id}/event     → impact, knockover, recovery
+            ├──► smartcones/{id}/status    → online/offline (LWT)
+            ├──► smartcones/{id}/telemetry → RSSI, uptime, heap, tilt
+            └──► smartcones/{id}/command   → reset, identify
+                    │
+                    ├──► Ntfy.sh ──► Phone push notification
+                    │
+                    └──► Cloudflare Workers Dashboard
+                            ├── Fleet Map (Leaflet.js)
+                            ├── Stats Bar (cones, online, alerts)
+                            ├── Event Log
+                            ├── Cone Detail Panel + Health
+                            ├── Public Hazard Map (/hazards.html)
+                            ├── CIFS Feed Viewer (/cifs-viewer.html)
+                            ├── CIFS XML (/api/feed/cifs.xml)
+                            └── CIFS JSON (/api/feed/cifs.json)
+```
+
+---
+
+## Features
+
+### Firmware (ESP32)
+
+- **Impact detection** — acceleration spike > 3g triggers alert
+- **Knockover detection** — tilt > 45° sustained for 1 second
+- **Recovery detection** — publishes recovery event when cone returns upright
+- **WiFiManager** — captive portal for WiFi + Cone ID setup (no hardcoded credentials)
+- **Dynamic Cone ID** — configurable per device, stored in ESP32 Preferences
+- **MQTT over TLS** — publishes events, status (with LWT), and telemetry to HiveMQ Cloud
+- **Ntfy push notifications** — HTTP POST to ntfy.sh on impact/knockover/intrusion
+- **Health telemetry** — publishes WiFi RSSI, uptime, free heap, tilt every 30s
+- **MQTT commands** — listens for reset (wipe config + restart) and identify (flash LED)
+- **LED status** — red = initializing/offline, green = connected & ready, red = alert
+- **Buzzer** — continuous buzz on impact/knockover, 3 quick beeps on intrusion
+- **Intrusion detection** — PIR sensor support (HC-SR501, code ready, commented out until wired)
+
+### Dashboard (Cloudflare Workers + Hono)
+
+- **Fleet Map** — Leaflet.js map with colored cone markers (green/red/orange/gray)
+- **Setup Mode** — place cones using phone GPS, stored in Cloudflare KV
+- **Cone Simulator** — generates 4 fake cones near real cone for demo
+- **Stats Bar** — Total Cones, Online, Alerts Today, Last Incident
+- **Latest Alert Card** — shows last event with state, cone ID, timestamp
+- **Event Log** — last 50 events with type badges and icons (Font Awesome)
+- **Detail Panel** — slide-in panel on marker click: state, coordinates, health, event history
+- **Fleet List** — click Total Cones stat to see all cones, click row to pan map
+- **Remove/Reset** — remove cone from dashboard + send MQTT reset to device
+- **Identify** — flash LED on specific cone from dashboard
+- **Health Monitoring** — WiFi signal, uptime, free memory, current tilt (color-coded)
+- **Public Hazard Map** — read-only map at `/hazards.html` for drivers/public
+- **CIFS XML Feed** — Waze-compatible road closure feed at `/api/feed/cifs.xml`
+- **CIFS JSON Feed** — same data in JSON at `/api/feed/cifs.json`
+- **CIFS Feed Viewer** — polished page explaining Waze integration with copy buttons
+- **Shortcut Pills** — quick links to hazard map, CIFS viewer, feeds
+- **Auto-deploy** — GitHub Actions deploys on push to `dashboard/**`
 
 ---
 
 ## Hardware
 
-### Essential
+### Bill of Materials
 
-| # | Component | Est. Price (MYR) | Links |
-|---|-----------|-------------------|-------|
-| 1 | ESP32 dev board (CH340, USB-C) | RM 8 - RM 40 | <a href="https://shopee.com.my/NodeMCU-ESP32-Wi-Fi-Bluetooth-Development-Board-CH340-CP2012-For-IOT-Project-i.1165814930.22789260417" target="_blank">MakerHub</a> |
-| 2 | MPU6050 module (GY-521) | RM 9 - RM 16 | <a href="https://shopee.com.my/GY-521-Gyroscope-Accelerometer-Module-MPU6050-MPU-6050-Motion-Measurement-Drone-Robotic-Application-i.1165814930.25564691626" target="_blank">MakerHub</a> |
-| 3 | Jumper wires (M-M, 20cm, 40pcs pack) | RM 2 - RM 5 | <a href="https://shopee.com.my/40pcs-Dupont-Wire-10cm-20cm-30cm-for-Breadboard-DIY-Experiment-Jumper-Wire-Breadboard-wire-i.1165814930.24676987244" target="_blank">MakerHub</a> |
-| 4 | Jumper wires (M-F, 30cm, 40pcs pack) | RM 2 - RM 5 | <a href="https://shopee.com.my/40pcs-Dupont-Wire-10cm-20cm-30cm-for-Breadboard-DIY-Experiment-Jumper-Wire-Breadboard-wire-i.1165814930.24676987244" target="_blank">MakerHub</a> |
-| 5 | Data cable (Type-A to USB-C, 0.5m-1m) | RM 2 - RM 5 | <a href="https://shopee.com.my/Data-Cable-Type-A-Type-C-MicroUSB-Type-B-0.5m-1m-30cm-0.3m-100cm-Data-Transfer-Upload-Code-i.1165814930.29671198885" target="_blank">MakerHub</a> |
-| 6 | Rechargeable AA batteries (x4, 2000mAh) | RM 8 - RM 15 | <a href="https://shopee.com.my/Rechargeable-AA-Battery-1.2V-NiMH-High-Capacity-2000mAh-3000mAh-Long-Life-Battery-for-Electronics-DIY-Projects-i.1165814930.29534820333" target="_blank">MakerHub</a> |
-| 7 | AA battery holder (4-slot) | RM 2 - RM 5 | <a href="https://shopee.com.my/product/1165814930/25014699466" target="_blank">MakerHub</a> |
-| 8 | MB102 breadboard power supply | RM 5 - RM 10 | <a href="https://shopee.com.my/product/1165814930/25978692975" target="_blank">MakerHub</a> |
-| 9 | Soldering iron + solder | RM 15 - RM 30 | — |
-| 10 | Traffic cone (30") | RM 20 - RM 30 | <a href="https://shopee.com.my/30-inch-Safety-Traffic-Pvc-Cone-Kon-Keselamatan-Jalan-Raya-30inci''(READY-STOCK)-i.195518124.7007655240" target="_blank">Shopee</a> |
-| 11 | Breadboard (400 holes) | RM 5 - RM 12 | <a href="https://shopee.com.my/MB102-Breadboard-170-400-830-Holes-Breadboard-Donut-Board-Arduino-Prototype-Multi-Color-i.1165814930.25477002583" target="_blank">MakerHub</a> |
+| # | Component | Est. Price (MYR) | GPIO | Links |
+|---|-----------|-------------------|------|-------|
+| 1 | ESP32 dev board (CH340, USB-C) | RM 15 | — | [MakerHub](https://shopee.com.my/makerhub) |
+| 2 | MPU6050 module (GY-521) | RM 10 | SDA=21, SCL=22 | [MakerHub](https://shopee.com.my/makerhub) |
+| 3 | Active buzzer module (5V) | RM 3 | GPIO 19 | [MakerHub](https://shopee.com.my/makerhub) |
+| 4 | KY-016 RGB LED | RM 3 | R=16, G=17 | [MakerHub](https://shopee.com.my/makerhub) |
+| 5 | HC-SR501 PIR sensor | RM 3 | GPIO 23 | [MakerHub](https://shopee.com.my/makerhub) |
+| 6 | WS2812B 4x4 LED matrix (x2) | RM 10-16 | GPIO 18 | [MakerHub](https://shopee.com.my/makerhub) |
+| 7 | MB102 breadboard power supply | RM 7 | — | [MakerHub](https://shopee.com.my/makerhub) |
+| 8 | USB to DC barrel jack cable | RM 3 | — | — |
+| 9 | Breadboard (400 holes, x2) | RM 10 | — | [MakerHub](https://shopee.com.my/makerhub) |
+| 10 | Jumper wires (M-M + M-F) | RM 8 | — | [MakerHub](https://shopee.com.my/makerhub) |
+| 11 | USB-C data cable | RM 3 | — | — |
+| 12 | Traffic cone (30") | RM 25 | — | — |
+| | **Total** | **~RM 100-115** | | |
 
-### Optional
+### Pin Map
 
-| Component | Est. Price (MYR) | Why | Links |
-|-----------|-------------------|-----|-------|
-| LED module (KY-016 RGB, x1) | RM 1 - RM 5 | Green = upright, red = knocked over | <a href="https://shopee.com.my/RGB-LED-Module-Electronic-Component-KY-016-Tri-Color-i.1165814930.27823191316" target="_blank">MakerHub</a> |
-| Active buzzer module (x1) | RM 2 - RM 5 | Beeps on impact, no tone code needed | <a href="https://shopee.com.my/Buzzer-Active-Passive-Buzzer-5V-Electronic-Sound-Alarm-Module-Tone-Piezo-i.1165814930.28621911858" target="_blank">MakerHub</a> |
-| Rubber bands / velcro strips | RM 2 - RM 5 | Mount breadboard inside cone base | — |
-| GPS module (NEO-6M) | RM 35 - RM 45 | Location tracking (future scope) | <a href="https://shopee.com.my/GPS-Module-GY-NEO-6M-8M-with-Ceramic-Antenna-Time-and-Location-Tracking-For-Arduino-IOT-Project-i.1165814930.25064660228" target="_blank">MakerHub</a> |
+| GPIO | Function | Component |
+|------|----------|-----------|
+| 21 | SDA (I2C) | MPU6050 |
+| 22 | SCL (I2C) | MPU6050 |
+| 16 | LED Red | KY-016 |
+| 17 | LED Green | KY-016 |
+| 18 | NeoPixel Data | WS2812B (future) |
+| 19 | Buzzer | Active buzzer |
+| 23 | PIR Motion | HC-SR501 (future) |
 
-> Recommended shop: <a href="https://shopee.com.my/makerhub" target="_blank">MakerHub (Shopee)</a> · <a href="https://makerhub.my" target="_blank">makerhub.my</a> — KL-based, ships within 24hrs.
-> Prices as of Feb 2026. Links may expire — search the component name on either platform if a link is dead.
+### Power Setup
 
-### Wiring
-
-```
-400-Hole Breadboard Layout
-══════════════════════════
-
-Power: MB102 Power Supply Module
-────────────────────────────────
-4x AA battery holder ──► MB102 USB input (4.8V)
-MB102 output set to 3.3V → powers breadboard rails
-ESP32 3.3V pin ◄──────── breadboard + rail
-ESP32 GND pin  ◄──────── breadboard - rail
-
-   +  -   a · · · e   f · · · j   +  -
-   ┊  ┊   ┌───────────────────┐   ┊  ┊
-   ┊  ┊  5│ 3V3 ■ ESP32  ■ VIN│   ┊  ┊
-   ┊  ┊  6│ GND ■       ■ GND │   ┊  ┊
-   ┊  ┊  7│ D15 ■       ■ D13 │   ┊  ┊
-   ┊  ┊  8│  D2 ■       ■ D12 │   ┊  ┊
-   ┊  ┊  9│  D4 ■       ■ D14 │   ┊  ┊
-   ┊  ┊ 10│ RX2 ■       ■ D27 │   ┊  ┊
-   ┊  ┊ 11│ TX2 ■       ■ D26 │   ┊  ┊
-   ┊  ┊ 12│  D5 ■       ■ D25 │   ┊  ┊
-   ┊  ┊ 13│ D18 ■       ■ D33 │   ┊  ┊
-   ┊  ┊ 14│ D19 ■       ■ D32 │   ┊  ┊
-   ┊  ┊ 15│ D21 ■       ■ D35 │   ┊  ┊
-   ┊  ┊ 16│ RX0 ■       ■ D34 │   ┊  ┊
-   ┊  ┊ 17│ TX0 ■       ■  VN │   ┊  ┊
-   ┊  ┊ 18│ D22 ■       ■  VP │   ┊  ┊
-   ┊  ┊ 19│ D23 ■       ■  EN │   ┊  ┊
-   ┊  ┊   └───────────────────┘   ┊  ┊
-   ┊  ┊                            ┊  ┊
-   ┊  ┊      GY-521 (MPU6050)      ┊  ┊
-   ┊  ┊ 27│  · · · SDA · │         ┊  ┊
-   ┊  ┊ 28│  · · · SCL · │         ┊  ┊
-   ┊  ┊ 29│  · · · GND · │         ┊  ┊
-   ┊  ┊ 30│  · · · VCC · │         ┊  ┊
-   ┊  ┊                            ┊  ┊
-
-ESP32 → GY-521 Wires (M-M 20cm)
-────────────────────────────────
-Wire  | Color | From (ESP32) | To (GY-521)
-3V3   | Black | a5           | e30 (VCC)
-GND   | Brown | a6           | e29 (GND)
-D21   | White | a15 (SDA)    | e27 (SDA)
-D22   | Red   | a18 (SCL)    | e28 (SCL)
-
-ESP32 → KY-016 RGB LED (M-F 30cm, LED at top of cone)
-──────────────────────────────────────────────────────
-D16   | a?  ────────► R
-D17   | a?  ────────► G
-GND   | a?  ────────► GND (-)
-
-ESP32 → Active Buzzer (M-M 20cm, stays at base)
-────────────────────────────────────────────────
-D19   | a14 ────────► Signal (+)
-GND   | -rail ──────► GND (-)
-```
-
-> **Assembly notes:**
-> - Solder header pins onto MPU6050 module before use (comes unsoldered)
-> - GY-521 has built-in pull-down on AD0 — no need to wire it (defaults to I2C address 0x68)
-> - MB102 power supply plugs directly onto the breadboard power rails, set jumper to 3.3V
-> - 4x AA NiMH batteries (4.8V) connect to MB102 via USB — powers entire breadboard
-> - All components share the same GND rail on the breadboard (critical)
-> - ESP32 + MPU6050 + buzzer sit on the 400-hole breadboard at the cone base
-> - LED module mounts at the top of the cone with 30cm M-F wires running down inside
-> - Hot glue LED module to cone top and secure all wire connections after final assembly
-> - Push jumper wires in firmly — loose I2C connections cause garbage data, not clean errors
-> - KY-016 RGB LED has built-in resistors, no external resistors needed
+- **ESP32** — powered via USB-C from laptop (flashing + serial monitor)
+- **MB102** — powered via USB power bank → DC barrel jack
+- **MB102 outputs** — 5V rail for buzzer, WS2812B, PIR sensor
+- Two 400-hole breadboards joined (center rails removed), ESP32 straddles both
 
 ---
 
-## Software Stack
+## Project Structure
 
 ```
-ESP32 + MPU6050
-    |
-    └──► MQTT (HiveMQ Cloud, free tier)
-            |
-            ├──► Ntfy.sh ──► Phone push notification
-            └──► Web dashboard (JS MQTT client, no backend)
+syuk/
+├── firmware/
+│   └── smart_cone/
+│       ├── smart_cone.ino     # Main sketch — state machine, sensor loop
+│       ├── config.h           # Pin defs, thresholds, MQTT topics
+│       ├── connectivity.h     # WiFiManager, MQTT, Ntfy, telemetry, commands
+│       └── secrets.h          # Generated from .env — NEVER commit
+├── dashboard/
+│   ├── src/
+│   │   └── index.ts           # Hono app — /api/config, /api/cones, /api/hazards, CIFS feeds
+│   ├── public/
+│   │   ├── index.html         # Main dashboard
+│   │   ├── app.js             # MQTT client, map, fleet list, detail panel, simulator
+│   │   ├── style.css          # Dark theme styles
+│   │   ├── hazards.html       # Public hazard map (read-only)
+│   │   └── cifs-viewer.html   # CIFS feed viewer with copy + instructions
+│   ├── wrangler.toml          # Cloudflare Workers config + KV binding
+│   └── package.json           # Hono, wrangler deps
+├── scripts/
+│   └── gen_secrets.sh         # Generates secrets.h from .env
+├── .github/
+│   └── workflows/
+│       └── deploy-dashboard.yml  # Auto-deploy on push
+├── CLAUDE.md                  # Project instructions for Claude Code
+├── AGENTS.md                  # bd (beads) issue tracking workflow
+└── .env                       # MQTT + Ntfy + CF credentials (gitignored)
 ```
 
-### Firmware (ESP32)
+---
 
-- Arduino (C++), managed via `arduino-cli`
-- Read accelerometer via I2C
-- Detect impact (acceleration > 3g) or tilt (> 45 degrees sustained)
-- Publish MQTT message on event
-- Sketch location: `firmware/smart_cone/smart_cone.ino`
+## MQTT Topics
 
-### Notifications
+| Topic | Direction | Payload | Description |
+|-------|-----------|---------|-------------|
+| `smartcones/{id}/event` | ESP32 → Cloud | `{"cone_id","event","accel_g","tilt_deg","uptime_s"}` | Impact, knockover, recovery, intrusion |
+| `smartcones/{id}/status` | ESP32 → Cloud | `{"status":"online\|offline"}` | Online on connect, offline via LWT |
+| `smartcones/{id}/telemetry` | ESP32 → Cloud | `{"cone_id","rssi","uptime_s","free_heap","tilt_deg"}` | Health data every 30s |
+| `smartcones/{id}/command` | Cloud → ESP32 | `{"action":"reset\|identify"}` | Remote reset or LED identify |
 
-- Ntfy.sh — free, no app to build, HTTP POST from ESP32
+---
 
-### Dashboard
+## API Endpoints
 
-- Static HTML/JS page
-- Connects to MQTT broker via websocket
-- Shows cone status (upright / knocked over), live accel graph, event log
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/config` | MQTT broker credentials for dashboard |
+| GET | `/api/cones` | List all cone locations from KV |
+| POST | `/api/cones` | Create/update cone location |
+| DELETE | `/api/cones/:id` | Remove a cone |
+| GET | `/api/hazards` | JSON hazard zones from cone positions |
+| GET | `/api/feed/cifs.xml` | Waze-compatible CIFS XML feed |
+| GET | `/api/feed/cifs.json` | CIFS data in JSON format |
 
 ---
 
 ## Detection Logic
 
-| Event | Trigger |
-|-------|---------|
-| Impact | Acceleration spike > 3g on any axis |
-| Knockover | Tilt > 45 degrees sustained for > 1 second |
+| Event | Trigger | LED | Buzzer |
+|-------|---------|-----|--------|
+| Impact | Acceleration > 3g | Red | 2s continuous |
+| Knockover | Tilt > 45° for 1s | Red | 2s continuous |
+| Recovery | Tilt < 30° after knockover | Green | — |
+| Intrusion | PIR motion detected | — | 3 quick beeps |
 
 ---
 
-## MQTT Message Format
+## Deployment
 
-```json
-{
-  "cone_id": "cone-001",
-  "event": "impact",
-  "accel_g": 4.2,
-  "tilt_deg": 72,
-  "battery_pct": 85,
-  "timestamp": 1707840000
-}
-```
-
-Topic: `smartcones/{cone_id}/event`
-
----
-
-## Build Phases
-
-### Phase 1 — Sensor
-- Wire ESP32 + MPU6050
-- Read accelerometer data on serial monitor
-- Calibrate impact and tilt thresholds
-
-### Phase 2 — Connectivity
-- Connect ESP32 to Wi-Fi
-- Publish events to MQTT broker
-- Receive push notification on phone via Ntfy
-
-### Phase 3 — Dashboard
-- Web page subscribing to MQTT
-- Live cone status and event history
-- Accelerometer graph (nice visual for judges)
-
-### Phase 4 — Package
-- Mount electronics inside cone base
-- Clean up wiring
-- Rehearse the demo
-
----
-
-## Cost Per Cone (approx, MYR)
-
-| Part | Est. Price (MYR) |
-|------|-------------------|
-| ESP32 dev board | RM 15 |
-| MPU6050 (GY-521) | RM 10 |
-| Breadboard (400 holes) | RM 8 |
-| MB102 power supply module | RM 7 |
-| Jumper wires (M-M + M-F) | RM 8 |
-| USB-C data cable | RM 3 |
-| Soldering iron + solder | RM 20 |
-| Rechargeable AA batteries (x4) | RM 12 |
-| AA battery holder (4-slot) | RM 3 |
-| Traffic cone (30") | RM 25 |
-| **Total** | **~RM 111** |
-
-> Optional add-ons: LED module (~RM 3), buzzer (~RM 3), GPS NEO-6M (~RM 40).
-
----
-
-## Future Scope (competition slide material)
-
-- Cone-to-cone chain alerts (mesh network)
-- Wearable integration (buzz worker's wristband on breach)
-- Fleet dashboard with GPS tracking across job sites
-- Automated incident reports for insurance/compliance
-- Solar charging for long-term deployment
-
----
-
-## Firmware Runbook (CLI)
-
-Step-by-step commands to set up, compile, and flash the firmware without the Arduino IDE GUI.
-
-### 1. Install arduino-cli
+### Firmware
 
 ```bash
-mkdir -p ~/.local/bin
-curl -fsSL https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_64bit.tar.gz \
-  -o /tmp/arduino-cli.tar.gz
-tar -xzf /tmp/arduino-cli.tar.gz -C ~/.local/bin arduino-cli
-```
+# Generate secrets from .env
+bash scripts/gen_secrets.sh
 
-Verify: `~/.local/bin/arduino-cli version`
-
-> Add `~/.local/bin` to your `PATH` if not already there, or use the full path.
-
-### 2. Install ESP32 board support & libraries
-
-```bash
-# Add ESP32 board URL and install core
-arduino-cli config init
-arduino-cli config add board_manager.additional_urls \
-  https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-arduino-cli core update-index
-arduino-cli core install esp32:esp32
-
-# Install required libraries
-arduino-cli lib install "Adafruit MPU6050" "Adafruit Unified Sensor"
-```
-
-### 3. Serial port permissions
-
-The ESP32 (CH340 chip) shows up as `/dev/ttyUSB0`. It requires `dialout` group membership:
-
-```bash
-# Check if port exists
-ls /dev/ttyUSB*
-
-# Add yourself to dialout group (one-time, requires logout or newgrp)
-sudo usermod -aG dialout $USER
-newgrp dialout
-
-# Verify
-groups  # should include 'dialout'
-```
-
-### 4. Compile
-
-```bash
+# Compile
 arduino-cli compile --fqbn esp32:esp32:esp32 firmware/smart_cone/
-```
 
-### 5. Flash
-
-```bash
+# Flash
 arduino-cli upload --fqbn esp32:esp32:esp32 --port /dev/ttyUSB0 firmware/smart_cone/
+
+# Monitor
+arduino-cli monitor --port /dev/ttyUSB0 --config baudrate=115200
 ```
 
-> If upload gets stuck at "Connecting...", hold the **BOOT** button on the ESP32.
-
-### 6. Monitor serial output
+### Dashboard (Cloudflare Workers)
 
 ```bash
-# Option A: arduino-cli monitor
-arduino-cli monitor --port /dev/ttyUSB0 --config baudrate=115200
+cd dashboard
 
-# Option B: raw serial
-stty -F /dev/ttyUSB0 115200 raw -echo
-cat /dev/ttyUSB0
+# Local dev
+echo "MQTT_BROKER_WSS=wss://xxx.hivemq.cloud:8884/mqtt" > .dev.vars
+echo "MQTT_USER=xxx" >> .dev.vars
+echo "MQTT_PASSWORD=xxx" >> .dev.vars
+npx wrangler dev
+
+# Production deploy (first time)
+npx wrangler kv namespace create CONE_LOCATIONS
+# Update wrangler.toml with KV namespace ID
+npx wrangler secret put MQTT_BROKER_WSS
+npx wrangler secret put MQTT_USER
+npx wrangler secret put MQTT_PASSWORD
+npx wrangler deploy
+
+# Subsequent deploys — automatic via GitHub Actions on push to dashboard/**
 ```
 
-Expected output at 115200 baud:
+### WiFi Setup (per cone)
 
+1. Power on ESP32 → opens "SmartCone-Setup" WiFi AP
+2. Connect from phone → captive portal appears
+3. Enter WiFi credentials + Cone ID (e.g. "cone-002")
+4. ESP32 connects, starts publishing to MQTT
+5. On dashboard, use Setup Mode to place cone at GPS location
+
+---
+
+## Credentials
+
+| File | Contains | Committed? |
+|------|----------|------------|
+| `.env` | MQTT, Ntfy, CF credentials | No (gitignored) |
+| `secrets.h` | Generated from .env | No (gitignored) |
+| `.dev.vars` | Dashboard local dev MQTT creds | No (gitignored) |
+| GitHub Secrets | CF_ACCOUNT_ID, CF_TOKEN | N/A (GitHub) |
+| Wrangler Secrets | MQTT_BROKER_WSS, MQTT_USER, MQTT_PASSWORD | N/A (Cloudflare) |
+
+---
+
+## Libraries
+
+### Firmware (Arduino)
+- Adafruit MPU6050
+- Adafruit Unified Sensor
+- WiFiManager
+- PubSubClient
+- ArduinoJson
+- Preferences (ESP32 built-in)
+
+### Dashboard
+- Hono (Cloudflare Workers framework)
+- Leaflet.js (maps)
+- MQTT.js (WebSocket MQTT client)
+- Font Awesome 6 (icons)
+
+---
+
+## Issue Tracking
+
+Uses `bd` (beads) for task management. See `AGENTS.md` for workflow.
+
+```bash
+bd ready          # Find available work
+bd show <id>      # View issue details
+bd update <id> --claim  # Claim work
+bd close <id>     # Complete work
 ```
-=== Smart Cone v1.0 ===
-MPU6050 OK
-LED OK (green)
-Buzzer OK
-Smart Cone ready!
-
-Accel X(g) | Y(g)  | Z(g)  | Mag(g) | Tilt(°) | State
-      0.12 | -0.05 |  1.10 |   1.11 |     6.9 | UPRIGHT
-```
-
-### Quick reference
-
-| Task | Command |
-|------|---------|
-| Compile | `arduino-cli compile --fqbn esp32:esp32:esp32 firmware/smart_cone/` |
-| Flash | `arduino-cli upload --fqbn esp32:esp32:esp32 --port /dev/ttyUSB0 firmware/smart_cone/` |
-| Monitor | `arduino-cli monitor --port /dev/ttyUSB0 --config baudrate=115200` |
-| List boards | `arduino-cli board list` |
-| List libraries | `arduino-cli lib list` |
 
 ---
 
 ## References
 
-- <a href="https://randomnerdtutorials.com/esp32-mpu-6050-accelerometer-gyroscope-arduino/" target="_blank">ESP32 + MPU6050 Wiring Guide — Random Nerd Tutorials</a>
-- <a href="https://randomnerdtutorials.com/esp32-pinout-reference-gpios/" target="_blank">ESP32 Pinout Reference — Random Nerd Tutorials</a>
-- <a href="https://lastminuteengineers.com/esp32-pinout-reference/" target="_blank">ESP32 Pinout Reference — Last Minute Engineers</a>
-- <a href="https://www.espboards.dev/sensors/ky-016/" target="_blank">KY-016 RGB LED + ESP32 Wiring — espboards.dev</a>
-- <a href="https://www.instructables.com/Connecting-MPU6050-With-ESP32/" target="_blank">Connecting MPU6050 with ESP32 — Instructables</a>
+- [ESP32 + MPU6050 Wiring Guide — Random Nerd Tutorials](https://randomnerdtutorials.com/esp32-mpu-6050-accelerometer-gyroscope-arduino/)
+- [ESP32 Pinout Reference — Random Nerd Tutorials](https://randomnerdtutorials.com/esp32-pinout-reference-gpios/)
+- [Waze CIFS Road Closure Specification](https://developers.google.com/waze/data-feed/road-closure-information)
+- [HiveMQ Cloud — Free MQTT Broker](https://www.hivemq.com/cloud/)
+- [Ntfy.sh — Push Notifications](https://ntfy.sh)
+- [Hono — Cloudflare Workers Framework](https://hono.dev)
+- [Leaflet.js — Interactive Maps](https://leafletjs.com)
+
+---
+
+&copy; Smart Cone 2026. All Rights Reserved.
