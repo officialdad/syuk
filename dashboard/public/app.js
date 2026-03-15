@@ -546,6 +546,56 @@
     recentEventsH4.parentNode.insertBefore(telemetryDiv, recentEventsH4);
   }
 
+  // Add remove button to detail panel
+  const removeDiv = document.createElement('div');
+  removeDiv.style.cssText = 'margin-top:1.5rem;padding-top:1rem;border-top:1px solid #334155;';
+  removeDiv.innerHTML = `
+    <button id="detail-remove-btn" class="btn" style="background:#ef4444;color:white;width:100%;padding:0.6rem;font-size:0.85rem;">
+      <i class="fa-solid fa-trash"></i> Remove Cone
+    </button>
+    <button id="detail-identify-btn" class="btn btn-outline" style="width:100%;padding:0.6rem;font-size:0.85rem;margin-top:0.5rem;">
+      <i class="fa-solid fa-eye"></i> Identify (Flash LED)
+    </button>
+  `;
+  detailPanel.querySelector('.detail-panel-body').appendChild(removeDiv);
+
+  // Remove cone handler
+  document.getElementById('detail-remove-btn').addEventListener('click', async () => {
+    const id = detailConeId.textContent;
+    if (!confirm(`Remove ${id}? This will reset the device and remove it from the map.`)) return;
+
+    // Delete from KV
+    try {
+      await fetch(`/api/cones/${id}`, { method: 'DELETE' });
+    } catch (err) {
+      console.error('Failed to delete cone:', err);
+    }
+
+    // Send MQTT reset command (if connected)
+    if (client && client.connected) {
+      client.publish(`smartcones/${id}/command`, JSON.stringify({ action: 'reset' }));
+    }
+
+    // Remove from local state
+    if (coneStates[id]) {
+      if (coneStates[id].marker) {
+        map.removeLayer(coneStates[id].marker);
+      }
+      delete coneStates[id];
+    }
+
+    updateStats();
+    detailPanel.classList.add('hidden');
+  });
+
+  // Identify cone handler
+  document.getElementById('detail-identify-btn').addEventListener('click', () => {
+    const id = detailConeId.textContent;
+    if (client && client.connected) {
+      client.publish(`smartcones/${id}/command`, JSON.stringify({ action: 'identify' }));
+    }
+  });
+
   // Update telemetry fields when panel is visible
   setInterval(() => {
     if (detailPanel.classList.contains('hidden')) return;
@@ -633,7 +683,25 @@
       badge.className = 'cone-state-badge ' + badgeClass;
       badge.textContent = cone.online ? (cone.state || 'UPRIGHT') : 'OFFLINE';
 
-      row.append(name, location, badge);
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'btn btn-outline btn-sm';
+      removeBtn.style.cssText = 'padding:0.2rem 0.5rem;font-size:0.7rem;color:#ef4444;border-color:#ef4444;';
+      removeBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+      removeBtn.addEventListener('click', async (e) => {
+        e.stopPropagation(); // Don't trigger row click
+        if (!confirm(`Remove ${id}?`)) return;
+        try { await fetch(`/api/cones/${id}`, { method: 'DELETE' }); } catch(err) {}
+        if (client && client.connected) {
+          client.publish(`smartcones/${id}/command`, JSON.stringify({ action: 'reset' }));
+        }
+        if (coneStates[id]) {
+          if (coneStates[id].marker) map.removeLayer(coneStates[id].marker);
+          delete coneStates[id];
+        }
+        updateStats();
+        renderFleetList(); // Re-render list
+      });
+      row.append(name, location, badge, removeBtn);
       row.addEventListener('click', () => {
         if (cone.marker) map.setView(cone.marker.getLatLng(), 17);
         showConeDetail(id);

@@ -40,4 +40,9 @@
 #define INTRUSION_COOLDOWN_MS 15000
 #define PIR_WARMUP_MS 60000
 
+// --- Cone ID ---
+#define DEFAULT_CONE_ID "cone-001"
+#define AP_NAME_PREFIX "SmartCone-"
+#define CONE_ID_MAX_LEN 32
+
 #endif

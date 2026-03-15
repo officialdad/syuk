@@ -6,31 +6,112 @@
 #include <PubSubClient.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <Preferences.h>
 #include "config.h"
 #include "secrets.h"
 
 WiFiClientSecure espClient;
 PubSubClient mqttClient(espClient);
 
+Preferences preferences;
+char dynamicConeId[CONE_ID_MAX_LEN] = "";
+
 unsigned long lastMqttReconnect = 0;
 
 bool setupWiFi() {
+  // Load saved Cone ID from Preferences
+  preferences.begin("smartcone", false);
+  String savedId = preferences.getString("cone_id", "");
+  if (savedId.length() > 0) {
+    savedId.toCharArray(dynamicConeId, CONE_ID_MAX_LEN);
+  } else {
+    strncpy(dynamicConeId, DEFAULT_CONE_ID, CONE_ID_MAX_LEN);
+  }
+
   WiFiManager wm;
   wm.setConfigPortalTimeout(180);
+
+  // Custom parameter for Cone ID
+  WiFiManagerParameter coneIdParam("cone_id", "Cone ID (e.g. cone-002)", dynamicConeId, CONE_ID_MAX_LEN);
+  wm.addParameter(&coneIdParam);
+
+  // Dynamic AP name: SmartCone-{id} or SmartCone-Setup if no ID saved
+  String apName = String(AP_NAME_PREFIX) + (savedId.length() > 0 ? savedId : "Setup");
+
   Serial.println("WiFi: Starting WiFiManager...");
-  if (!wm.autoConnect(WIFI_AP_NAME)) {
+  Serial.printf("WiFi: AP name: %s\n", apName.c_str());
+
+  if (!wm.autoConnect(apName.c_str())) {
     Serial.println("WiFi: Failed to connect. Continuing offline.");
+    preferences.end();
     return false;
   }
+
+  // Save the Cone ID from the portal
+  String newId = String(coneIdParam.getValue());
+  newId.trim();
+  if (newId.length() > 0 && newId != String(dynamicConeId)) {
+    newId.toCharArray(dynamicConeId, CONE_ID_MAX_LEN);
+    preferences.putString("cone_id", newId);
+    Serial.printf("WiFi: Cone ID saved: %s\n", dynamicConeId);
+  }
+
+  preferences.end();
   Serial.print("WiFi: Connected! IP: ");
   Serial.println(WiFi.localIP());
+  Serial.printf("WiFi: Cone ID: %s\n", dynamicConeId);
   return true;
+}
+
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  // Parse command
+  char msg[256];
+  unsigned int copyLen = length < 255 ? length : 255;
+  memcpy(msg, payload, copyLen);
+  msg[copyLen] = '\0';
+
+  Serial.printf("MQTT Command: %s\n", msg);
+
+  JsonDocument doc;
+  if (deserializeJson(doc, msg)) return;
+
+  const char* action = doc["action"];
+  if (!action) return;
+
+  if (strcmp(action, "reset") == 0) {
+    Serial.println("MQTT: Reset command received! Clearing config and restarting...");
+    // Clear WiFi credentials
+    WiFiManager wm;
+    wm.resetSettings();
+    // Clear saved Cone ID
+    preferences.begin("smartcone", false);
+    preferences.clear();
+    preferences.end();
+    delay(1000);
+    ESP.restart();
+  } else if (strcmp(action, "identify") == 0) {
+    Serial.println("MQTT: Identify command — flashing LED!");
+    // Flash LED rapidly for 5 seconds
+    for (int i = 0; i < 25; i++) {
+      digitalWrite(LED_RED_PIN, HIGH); digitalWrite(LED_GREEN_PIN, HIGH); // yellow
+      delay(100);
+      digitalWrite(LED_RED_PIN, LOW); digitalWrite(LED_GREEN_PIN, LOW); // off
+      delay(100);
+    }
+    // Restore normal state
+    if (mqttClient.connected()) {
+      digitalWrite(LED_RED_PIN, LOW); digitalWrite(LED_GREEN_PIN, HIGH); // green
+    } else {
+      digitalWrite(LED_RED_PIN, HIGH); digitalWrite(LED_GREEN_PIN, LOW); // red
+    }
+  }
 }
 
 void setupMQTT() {
   espClient.setInsecure();
   mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
   mqttClient.setBufferSize(512);
+  mqttClient.setCallback(mqttCallback);
 }
 
 bool mqttReconnect() {
@@ -45,14 +126,19 @@ bool mqttReconnect() {
   Serial.print(MQTT_BROKER);
   Serial.print("...");
 
-  String clientId = "smartcone-" + String(CONE_ID);
+  String clientId = "smartcone-" + String(dynamicConeId);
   char statusTopic[64];
-  snprintf(statusTopic, sizeof(statusTopic), MQTT_TOPIC_STATUS, CONE_ID);
+  snprintf(statusTopic, sizeof(statusTopic), MQTT_TOPIC_STATUS, dynamicConeId);
   // LWT: broker publishes "offline" if device disconnects unexpectedly
   if (mqttClient.connect(clientId.c_str(), MQTT_USER, MQTT_PASSWORD,
                          statusTopic, 0, true, "{\"status\":\"offline\"}")) {
     Serial.println(" connected!");
     mqttClient.publish(statusTopic, "{\"status\":\"online\"}", true);
+    // Subscribe to command topic
+    char cmdTopic[64];
+    snprintf(cmdTopic, sizeof(cmdTopic), "smartcones/%s/command", dynamicConeId);
+    mqttClient.subscribe(cmdTopic);
+    Serial.printf("MQTT: Subscribed to %s\n", cmdTopic);
     return true;
   } else {
     Serial.print(" failed (rc=");
@@ -73,7 +159,7 @@ bool publishEvent(const char* event, float accelG, float tiltDeg) {
   if (!mqttClient.connected()) return false;
 
   JsonDocument doc;
-  doc["cone_id"] = CONE_ID;
+  doc["cone_id"] = dynamicConeId;
   doc["event"] = event;
   doc["accel_g"] = round(accelG * 100) / 100.0;
   doc["tilt_deg"] = round(tiltDeg * 10) / 10.0;
@@ -83,7 +169,7 @@ bool publishEvent(const char* event, float accelG, float tiltDeg) {
   serializeJson(doc, payload, sizeof(payload));
 
   char topic[64];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_EVENT, CONE_ID);
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_EVENT, dynamicConeId);
 
   bool ok = mqttClient.publish(topic, payload);
   if (ok) {
@@ -106,11 +192,11 @@ void sendNtfyAlert(const char* event, float accelG, float tiltDeg) {
 
   String body;
   if (strcmp(event, "knockover") == 0) {
-    body = "Cone " + String(CONE_ID) + " KNOCKED OVER! Tilt: " + String(tiltDeg, 1) + "deg";
+    body = "Cone " + String(dynamicConeId) + " KNOCKED OVER! Tilt: " + String(tiltDeg, 1) + "deg";
   } else if (strcmp(event, "intrusion") == 0) {
-    body = "Cone " + String(CONE_ID) + " INTRUSION detected nearby!";
+    body = "Cone " + String(dynamicConeId) + " INTRUSION detected nearby!";
   } else {
-    body = "Cone " + String(CONE_ID) + " IMPACT detected! Force: " + String(accelG, 1) + "g";
+    body = "Cone " + String(dynamicConeId) + " IMPACT detected! Force: " + String(accelG, 1) + "g";
   }
 
   int code = http.POST(body);
@@ -126,7 +212,7 @@ void publishTelemetry(float tiltDeg) {
   if (!mqttClient.connected()) return;
 
   JsonDocument doc;
-  doc["cone_id"] = CONE_ID;
+  doc["cone_id"] = dynamicConeId;
   doc["rssi"] = WiFi.RSSI();
   doc["uptime_s"] = millis() / 1000;
   doc["free_heap"] = ESP.getFreeHeap();
@@ -136,7 +222,7 @@ void publishTelemetry(float tiltDeg) {
   serializeJson(doc, payload, sizeof(payload));
 
   char topic[64];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_TELEMETRY, CONE_ID);
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_TELEMETRY, dynamicConeId);
 
   mqttClient.publish(topic, payload);
 }

@@ -21,8 +21,8 @@ bool buzzerActive = false;
 bool tiltTimerRunning = false;
 bool mqttConnected = false;
 unsigned long lastTelemetryTime = 0;
-unsigned long lastIntrusionTime = 0;
-unsigned long pirWarmupStart = 0;
+// unsigned long lastIntrusionTime = 0;  // PIR — enable when hardware wired
+// unsigned long pirWarmupStart = 0;
 
 // --- Helper Functions ---
 
@@ -69,10 +69,10 @@ void setup() {
   pinMode(BUZZER_PIN, OUTPUT);
   buzzerOff();
 
-  // Init PIR sensor
-  pinMode(PIR_PIN, INPUT);
-  pirWarmupStart = millis();
-  Serial.println("PIR warming up (60s)...");
+  // PIR sensor — commented out until hardware wired
+  // pinMode(PIR_PIN, INPUT);
+  // pirWarmupStart = millis();
+  // Serial.println("PIR warming up (60s)...");
 
   // Init MPU6050
   if (!mpu.begin()) {
@@ -220,28 +220,24 @@ void loop() {
       break;
   }
 
-  // --- Intrusion Detection (PIR) ---
-  // Skip during warmup period
-  if (millis() - pirWarmupStart >= PIR_WARMUP_MS) {
-    if (digitalRead(PIR_PIN) == HIGH) {
-      unsigned long now = millis();
-      if (now - lastIntrusionTime >= INTRUSION_COOLDOWN_MS) {
-        lastIntrusionTime = now;
-        Serial.println("\n*** INTRUSION DETECTED! ***\n");
-
-        // Short warning beep pattern (3 quick beeps, different from knockover)
-        for (int i = 0; i < 3; i++) {
-          digitalWrite(BUZZER_PIN, HIGH);
-          delay(100);
-          digitalWrite(BUZZER_PIN, LOW);
-          delay(100);
-        }
-
-        publishEvent("intrusion", magnitude, tiltDeg);
-        sendNtfyAlert("intrusion", magnitude, tiltDeg);
-      }
-    }
-  }
+  // --- Intrusion Detection (PIR) — enable when hardware wired ---
+  // if (millis() - pirWarmupStart >= PIR_WARMUP_MS) {
+  //   if (digitalRead(PIR_PIN) == HIGH) {
+  //     unsigned long now = millis();
+  //     if (now - lastIntrusionTime >= INTRUSION_COOLDOWN_MS) {
+  //       lastIntrusionTime = now;
+  //       Serial.println("\n*** INTRUSION DETECTED! ***\n");
+  //       for (int i = 0; i < 3; i++) {
+  //         digitalWrite(BUZZER_PIN, HIGH);
+  //         delay(100);
+  //         digitalWrite(BUZZER_PIN, LOW);
+  //         delay(100);
+  //       }
+  //       publishEvent("intrusion", magnitude, tiltDeg);
+  //       sendNtfyAlert("intrusion", magnitude, tiltDeg);
+  //     }
+  //   }
+  // }
 
   delay(50); // 20Hz sampling rate
 }
