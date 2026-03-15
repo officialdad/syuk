@@ -19,13 +19,18 @@ char dynamicConeId[CONE_ID_MAX_LEN] = "";
 unsigned long lastMqttReconnect = 0;
 
 bool setupWiFi() {
-  // Load saved Cone ID from Preferences
+  // Load or generate Cone ID
   preferences.begin("smartcone", false);
   String savedId = preferences.getString("cone_id", "");
+
   if (savedId.length() > 0) {
     savedId.toCharArray(dynamicConeId, CONE_ID_MAX_LEN);
   } else {
-    strncpy(dynamicConeId, DEFAULT_CONE_ID, CONE_ID_MAX_LEN);
+    // Auto-generate from ESP32 MAC address (last 4 hex chars)
+    uint8_t mac[6];
+    WiFi.macAddress(mac);
+    snprintf(dynamicConeId, CONE_ID_MAX_LEN, "%s%02x%02x", CONE_ID_PREFIX, mac[4], mac[5]);
+    Serial.printf("WiFi: Auto-generated Cone ID: %s\n", dynamicConeId);
   }
 
   WiFiManager wm;

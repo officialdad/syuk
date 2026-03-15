@@ -41,7 +41,7 @@
 #define PIR_WARMUP_MS 60000
 
 // --- Cone ID ---
-#define DEFAULT_CONE_ID "cone-001"
+#define CONE_ID_PREFIX "cone-"
 #define AP_NAME_PREFIX "SmartCone-"
 #define CONE_ID_MAX_LEN 32
 

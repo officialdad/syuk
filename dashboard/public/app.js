@@ -24,6 +24,39 @@
   const statAlerts = document.getElementById('stat-alerts');
   const statLastIncident = document.getElementById('stat-last-incident');
 
+  // --- Toast Notifications ---
+  const toastContainer = document.getElementById('toast-container');
+
+  function showToast(title, message, actionText, actionCallback) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `
+      <span class="toast-icon"><i class="fa-solid fa-circle-plus"></i></span>
+      <div class="toast-content">
+        <div class="toast-title">${title}</div>
+        <div class="toast-message">${message}</div>
+      </div>
+      ${actionText ? `<button class="toast-action">${actionText}</button>` : ''}
+      <button class="toast-close"><i class="fa-solid fa-xmark"></i></button>
+    `;
+
+    const closeBtn = toast.querySelector('.toast-close');
+    closeBtn.addEventListener('click', () => toast.remove());
+
+    if (actionText && actionCallback) {
+      const actionBtn = toast.querySelector('.toast-action');
+      actionBtn.addEventListener('click', () => {
+        actionCallback();
+        toast.remove();
+      });
+    }
+
+    toastContainer.appendChild(toast);
+
+    // Auto-dismiss after 15 seconds
+    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 15000);
+  }
+
   // State
   let setupMode = false;
   let simulatorRunning = false;
@@ -429,6 +462,30 @@
 
     if (topicType === 'event') {
       const eventConeId = payload.cone_id || topicConeId;
+
+      // Auto-discover unknown cones
+      if (!coneStates[eventConeId]) {
+        showToast(
+          'New Cone Detected',
+          `${eventConeId} is online but not placed on the map.`,
+          'Place Now',
+          () => {
+            // Enable setup mode and pre-fill cone ID
+            if (!setupMode) {
+              setupMode = true;
+              btnSetupMode.classList.add('active');
+              btnSetupMode.innerHTML = '<i class="fa-solid fa-xmark"></i> Exit Setup';
+              setupPanel.classList.toggle('hidden', false);
+            }
+            newConeIdInput.value = eventConeId;
+            newConeIdInput.disabled = true; // Lock the ID since it's from MQTT
+            // Re-enable after placement
+            const enableInput = () => { newConeIdInput.disabled = false; };
+            btnPlaceCone.addEventListener('click', enableInput, { once: true });
+          }
+        );
+      }
+
       const eventType = payload.event || 'unknown';
       const accelG = payload.accel_g;
       const tiltDeg = payload.tilt_deg;
@@ -459,6 +516,24 @@
     } else if (topicType === 'status') {
       const online = payload.status === 'online';
       const statusConeId = payload.cone_id || topicConeId;
+
+      // Auto-discover unknown cones
+      if (payload.status === 'online' && !coneStates[statusConeId]) {
+        showToast(
+          'New Cone Detected',
+          `${statusConeId} is online but not placed on the map.`,
+          'Place Now',
+          () => {
+            if (!setupMode) {
+              setupMode = true;
+              btnSetupMode.classList.add('active');
+              btnSetupMode.innerHTML = '<i class="fa-solid fa-xmark"></i> Exit Setup';
+              setupPanel.classList.toggle('hidden', false);
+            }
+            newConeIdInput.value = statusConeId;
+          }
+        );
+      }
 
       setDeviceOnline(online);
       if (statusConeId) coneId.textContent = statusConeId;
