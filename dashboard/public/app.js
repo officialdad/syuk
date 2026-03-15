@@ -311,28 +311,11 @@
     btnSimulator.innerHTML = '<i class="fa-solid fa-stop"></i> Stop Simulator';
     btnSimulator.classList.add('active');
 
-    // Determine base position: use real cone if placed, otherwise user GPS
-    const realCone = coneStates['cone-001'];
+    // Determine base position: use first real (non-sim) cone, otherwise user GPS
+    const realConeId = Object.keys(coneStates).find(id => !id.startsWith('sim-'));
+    const realCone = realConeId ? coneStates[realConeId] : null;
     const baseLat = realCone ? realCone.lat : userLat;
     const baseLng = realCone ? realCone.lng : userLng;
-
-    // If real cone not on map yet, place it at base position
-    if (!realCone) {
-      const rc = { cone_id: 'cone-001', lat: baseLat, lng: baseLng, label: 'Zone A - Main Gate' };
-      try {
-        await fetch('/api/cones', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(rc),
-        });
-        addConeToMap(rc.cone_id, rc.lat, rc.lng, rc.label);
-        coneStates[rc.cone_id].online = true;
-        updateMarker(rc.cone_id);
-        attachMarkerClick(rc.cone_id);
-      } catch (err) {
-        console.error('Failed to place real cone:', err);
-      }
-    }
 
     // Generate sim cones near the real cone / user position
     const simCones = generateSimCones(baseLat, baseLng);
