@@ -545,53 +545,65 @@ h2 i {
 .cone-state-badge.knocked_over { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
 .cone-state-badge.offline { color: #6b7280; background: rgba(107, 114, 128, 0.1); }
 
-/* Shortcut pills */
-.shortcuts {
+/* Navigation cards */
+.nav-cards {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
-.shortcuts-row {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.shortcuts-main {
-  width: 100%;
-}
-
-.shortcut-pill-lg {
+.nav-card {
   flex: 1;
-  justify-content: center;
-  padding: 0.6rem 1rem;
-  font-size: 0.85rem;
-}
-
-.shortcut-pill {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.85rem;
-  border-radius: 2rem;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: #94a3b8;
-  background: #1e293b;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  background: linear-gradient(135deg, #1e293b 0%, #253349 100%);
   border: 1px solid #334155;
+  border-radius: 0.75rem;
   text-decoration: none;
+  color: #e2e8f0;
   transition: all 0.2s;
 }
 
-.shortcut-pill:hover {
-  background: #334155;
-  color: #e2e8f0;
-  border-color: #475569;
+.nav-card:hover, .nav-card:active {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #253349 0%, #1e3a5f 100%);
+  transform: translateY(-1px);
 }
 
-.shortcut-pill i {
+.nav-card-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(59, 130, 246, 0.15);
+  border-radius: 0.5rem;
+  color: #3b82f6;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.nav-card-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.nav-card-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.nav-card-desc {
   font-size: 0.7rem;
+  color: #64748b;
+}
+
+.nav-card-arrow {
+  color: #475569;
+  font-size: 0.8rem;
 }
 
 /* Footer */
@@ -702,26 +714,139 @@ h2 i {
   color: #60a5fa;
 }
 
-/* Responsive */
+/* Mobile-first optimizations */
 @media (max-width: 600px) {
   header {
     flex-direction: column;
     gap: 0.5rem;
     text-align: center;
+    padding: 0.75rem 1rem;
   }
 
+  header h1 {
+    font-size: 1.1rem;
+  }
+
+  main {
+    margin: 0.75rem auto;
+    gap: 0.75rem;
+    padding: 0 0.5rem;
+  }
+
+  /* Stats: 2x2 grid on mobile */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .stat {
+    min-width: unset;
+    padding: 0.75rem;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
+
+  /* Nav cards: stack vertically */
+  .nav-cards {
+    flex-direction: column;
+  }
+
+  .nav-card {
+    padding: 1rem;
+  }
+
+  /* Status card */
   .status-body {
     flex-direction: column;
     align-items: flex-start;
   }
 
   .status-details {
-    flex-direction: column;
-    gap: 0.75rem;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1rem;
   }
 
-  main {
-    margin: 1rem auto;
+  .cone-status-card,
+  .event-log-card,
+  .map-container {
+    padding: 1rem;
+    border-radius: 0.5rem;
+  }
+
+  /* Map */
+  #map {
+    height: 300px;
+  }
+
+  .map-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .map-controls {
+    width: 100%;
+  }
+
+  .map-controls .btn {
+    flex: 1;
+    padding: 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  /* Setup panel: full width */
+  .setup-form {
+    flex-direction: column;
+  }
+
+  .setup-form input {
+    width: 100%;
+    min-width: unset;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .setup-form .btn-primary {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  /* Event log: readable */
+  table {
+    font-size: 0.8rem;
+  }
+
+  thead th, tbody td {
+    padding: 0.4rem 0.5rem;
+  }
+
+  /* Fleet list */
+  .fleet-list-row {
+    padding: 0.65rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  /* Toast: full width */
+  .toast-container {
+    left: 0.5rem;
+    right: 0.5rem;
+    top: auto;
+    bottom: 1rem;
+  }
+
+  .toast {
+    max-width: none;
+  }
+
+  /* Footer */
+  .site-footer {
+    padding: 1rem;
+    font-size: 0.7rem;
   }
 
   .detail-panel {
