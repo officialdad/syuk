@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Road Hazards — Smart Cone</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; }
+    header { padding: 1rem 1.5rem; background: #1e293b; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 1.1rem; }
+    header .badge { background: #ef4444; color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.8rem; font-weight: 600; }
+    #map { height: calc(100vh - 120px); }
+    .info-bar { padding: 0.75rem 1.5rem; background: #1e293b; border-bottom: 1px solid #334155; font-size: 0.85rem; color: #94a3b8; display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    .info-item { display: flex; align-items: center; gap: 0.4rem; }
+    .info-item i { color: #64748b; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><i class="fa-solid fa-triangle-exclamation"></i> Road Hazard Alert</h1>
+    <span class="badge" id="status-badge">Loading...</span>
+  </header>
+  <div class="info-bar">
+    <span class="info-item"><i class="fa-solid fa-road-barrier"></i> <span id="cone-count">--</span> cones deployed</span>
+    <span class="info-item"><i class="fa-solid fa-clock"></i> Updated <span id="last-update">--</span></span>
+    <span class="info-item"><i class="fa-solid fa-location-dot"></i> <span id="zone-type">--</span></span>
+  </div>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([3.139, 101.687], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map);
+
+    function createIcon(color) {
+      return L.divIcon({
+        className: 'cone-marker',
+        html: '<div style="background:' + color + ';width:16px;height:16px;border-radius:50%;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.4);"></div>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+      });
+    }
+
+    const orangeIcon = createIcon('#f59e0b');
+    const redIcon = createIcon('#ef4444');
+
+    async function loadHazards() {
+      try {
+        const res = await fetch('/api/hazards');
+        const data = await res.json();
+        const badge = document.getElementById('status-badge');
+        const coneCount = document.getElementById('cone-count');
+        const lastUpdate = document.getElementById('last-update');
+        const zoneType = document.getElementById('zone-type');
+
+        if (!data.active || data.zones.length === 0) {
+          badge.textContent = 'No Active Hazards';
+          badge.style.background = '#22c55e';
+          return;
+        }
+
+        const zone = data.zones[0];
+        badge.textContent = 'Active Hazard Zone';
+        badge.style.background = '#ef4444';
+        coneCount.textContent = zone.cone_count;
+        lastUpdate.textContent = new Date().toLocaleTimeString();
+        zoneType.textContent = zone.type === 'road_closure' ? 'Road Closure' : 'Construction Zone';
+
+        // Add cone markers
+        const markers = [];
+        zone.cones.forEach(cone => {
+          const marker = L.marker([cone.lat, cone.lng], { icon: orangeIcon }).addTo(map);
+          marker.bindPopup('<strong>' + cone.id + '</strong><br>' + (cone.label || ''));
+          markers.push(marker);
+        });
+
+        // Draw hazard zone polygon
+        if (zone.cones.length >= 3) {
+          const latlngs = zone.cones.map(c => [c.lat, c.lng]);
+          L.polygon(latlngs, { color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.15, weight: 2, dashArray: '5,10' }).addTo(map);
+        } else if (zone.cones.length === 2) {
+          const latlngs = zone.cones.map(c => [c.lat, c.lng]);
+          L.polyline(latlngs, { color: '#ef4444', weight: 3, dashArray: '10,10' }).addTo(map);
+        }
+
+        // Fit map to markers
+        if (markers.length > 0) {
+          map.fitBounds(L.featureGroup(markers).getBounds().pad(0.3));
+        }
+      } catch (err) {
+        console.error('Failed to load hazards:', err);
+      }
+    }
+
+    loadHazards();
+    setInterval(loadHazards, 30000); // Refresh every 30s
+  </script>
+</body>
+</html>

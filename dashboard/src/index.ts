@@ -46,6 +46,90 @@ app.delete('/api/cones/:id', async (c) => {
   return c.json({ deleted: id });
 });
 
+// GET /api/hazards — JSON hazard zones derived from cone positions
+app.get('/api/hazards', async (c) => {
+  const list = await c.env.CONE_LOCATIONS.list({ prefix: 'cone:' });
+  const cones = (await Promise.all(
+    list.keys.map(async (key) => {
+      const value = await c.env.CONE_LOCATIONS.get(key.name, 'json');
+      return value;
+    })
+  )).filter(Boolean) as Array<{cone_id: string; lat: number; lng: number; label: string; placed_at: string}>;
+
+  if (cones.length < 1) {
+    return c.json({ active: false, zones: [] });
+  }
+
+  // Calculate bounding box from cone positions
+  const lats = cones.map(c => c.lat);
+  const lngs = cones.map(c => c.lng);
+  const zone = {
+    type: cones.length >= 3 ? 'road_closure' : 'construction',
+    severity: 'normal',
+    cone_count: cones.length,
+    start: { lat: Math.min(...lats), lng: Math.min(...lngs) },
+    end: { lat: Math.max(...lats), lng: Math.max(...lngs) },
+    center: { lat: (Math.min(...lats) + Math.max(...lats)) / 2, lng: (Math.min(...lngs) + Math.max(...lngs)) / 2 },
+    cones: cones.map(c => ({ id: c.cone_id, lat: c.lat, lng: c.lng, label: c.label })),
+    created_at: cones.reduce((earliest, c) => c.placed_at < earliest ? c.placed_at : earliest, cones[0].placed_at),
+  };
+
+  return c.json({ active: true, zones: [zone] });
+});
+
+// GET /api/feed/cifs.xml — Waze-compatible CIFS XML feed
+app.get('/api/feed/cifs.xml', async (c) => {
+  const list = await c.env.CONE_LOCATIONS.list({ prefix: 'cone:' });
+  const cones = (await Promise.all(
+    list.keys.map(async (key) => {
+      const value = await c.env.CONE_LOCATIONS.get(key.name, 'json');
+      return value;
+    })
+  )).filter(Boolean) as Array<{cone_id: string; lat: number; lng: number; label: string; placed_at: string}>;
+
+  const now = new Date().toISOString();
+  let incidents = '';
+
+  if (cones.length >= 1) {
+    const lats = cones.map(c => c.lat);
+    const lngs = cones.map(c => c.lng);
+    const centerLat = ((Math.min(...lats) + Math.max(...lats)) / 2).toFixed(6);
+    const centerLng = ((Math.min(...lngs) + Math.max(...lngs)) / 2).toFixed(6);
+    const type = cones.length >= 3 ? 'ROAD_CLOSED' : 'CONSTRUCTION';
+    const polyline = cones.map(c => `${c.lat.toFixed(6)} ${c.lng.toFixed(6)}`).join(' ');
+
+    incidents = `
+    <incident id="smartcone-zone-1">
+      <type>${type}</type>
+      <subtype>${type === 'ROAD_CLOSED' ? 'ROAD_CLOSED_EVENT' : 'ROAD_CONSTRUCTION'}</subtype>
+      <description>Smart Cone monitored work zone - ${cones.length} cones deployed</description>
+      <direction>BOTH_DIRECTIONS</direction>
+      <polyline>${polyline}</polyline>
+      <location>
+        <latitude>${centerLat}</latitude>
+        <longitude>${centerLng}</longitude>
+      </location>
+      <starttime>${cones[0].placed_at}</starttime>
+      <updatetime>${now}</updatetime>
+      <severity>Minor</severity>
+      <creationtime>${cones[0].placed_at}</creationtime>
+    </incident>`;
+  }
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<incidents timestamp="${now}">
+  <feed_info>
+    <feed_id>smartcone-feed</feed_id>
+    <feed_name>Smart Cone Traffic Hazards</feed_name>
+    <update_frequency>60</update_frequency>
+  </feed_info>${incidents}
+</incidents>`;
+
+  return new Response(xml, {
+    headers: { 'Content-Type': 'application/xml; charset=utf-8' },
+  });
+});
+
 app.get('/api/config', (c) => {
   return c.json({
     broker: c.env.MQTT_BROKER_WSS,

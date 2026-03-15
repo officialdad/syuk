@@ -20,6 +20,9 @@ unsigned long buzzerStartTime = 0;
 bool buzzerActive = false;
 bool tiltTimerRunning = false;
 bool mqttConnected = false;
+unsigned long lastTelemetryTime = 0;
+unsigned long lastIntrusionTime = 0;
+unsigned long pirWarmupStart = 0;
 
 // --- Helper Functions ---
 
@@ -65,6 +68,11 @@ void setup() {
   // Init buzzer pin
   pinMode(BUZZER_PIN, OUTPUT);
   buzzerOff();
+
+  // Init PIR sensor
+  pinMode(PIR_PIN, INPUT);
+  pirWarmupStart = millis();
+  Serial.println("PIR warming up (60s)...");
 
   // Init MPU6050
   if (!mpu.begin()) {
@@ -135,6 +143,12 @@ void loop() {
   float magnitude = sqrt(ax * ax + ay * ay + az * az);
   float tiltDeg = acos(constrain(az / magnitude, -1.0, 1.0)) * 180.0 / PI;
 
+  // Publish telemetry periodically
+  if (mqttClient.connected() && (millis() - lastTelemetryTime >= TELEMETRY_INTERVAL_MS)) {
+    lastTelemetryTime = millis();
+    publishTelemetry(tiltDeg);
+  }
+
   // Print readings
   Serial.printf("%10.2f | %5.2f | %5.2f | %6.2f | %7.1f | %s\n",
                 ax, ay, az, magnitude, tiltDeg, stateToString(state));
@@ -204,6 +218,29 @@ void loop() {
         state = UPRIGHT;
       }
       break;
+  }
+
+  // --- Intrusion Detection (PIR) ---
+  // Skip during warmup period
+  if (millis() - pirWarmupStart >= PIR_WARMUP_MS) {
+    if (digitalRead(PIR_PIN) == HIGH) {
+      unsigned long now = millis();
+      if (now - lastIntrusionTime >= INTRUSION_COOLDOWN_MS) {
+        lastIntrusionTime = now;
+        Serial.println("\n*** INTRUSION DETECTED! ***\n");
+
+        // Short warning beep pattern (3 quick beeps, different from knockover)
+        for (int i = 0; i < 3; i++) {
+          digitalWrite(BUZZER_PIN, HIGH);
+          delay(100);
+          digitalWrite(BUZZER_PIN, LOW);
+          delay(100);
+        }
+
+        publishEvent("intrusion", magnitude, tiltDeg);
+        sendNtfyAlert("intrusion", magnitude, tiltDeg);
+      }
+    }
   }
 
   delay(50); // 20Hz sampling rate

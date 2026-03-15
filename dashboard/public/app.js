@@ -176,11 +176,12 @@
 
     const tdEvent = document.createElement('td');
     const badge = document.createElement('span');
-    badge.className = 'event-badge ' + (eventType === 'impact' ? 'impact' : eventType === 'knockover' ? 'knocked_over' : 'default');
+    badge.className = 'event-badge ' + (eventType === 'impact' ? 'impact' : eventType === 'knockover' ? 'knocked_over' : eventType === 'recovery' ? 'recovery' : eventType === 'intrusion' ? 'intrusion' : 'default');
     let badgeIcon = '';
     if (eventType === 'impact') badgeIcon = '<i class="fa-solid fa-bolt"></i> ';
     else if (eventType === 'knockover') badgeIcon = '<i class="fa-solid fa-triangle-exclamation"></i> ';
     else if (eventType === 'recovery') badgeIcon = '<i class="fa-solid fa-check"></i> ';
+    else if (eventType === 'intrusion') badgeIcon = '<i class="fa-solid fa-person-walking"></i> ';
     badge.innerHTML = badgeIcon + eventType;
     tdEvent.appendChild(badge);
 
@@ -389,6 +390,7 @@
     setConnectionState('connected');
     client.subscribe('smartcones/+/event');
     client.subscribe('smartcones/+/status');
+    client.subscribe('smartcones/+/telemetry');
   });
 
   client.on('reconnect', function () {
@@ -466,6 +468,21 @@
         updateMarker(statusConeId);
       }
       updateStats();
+    } else if (topicType === 'telemetry') {
+      const telConeId = payload.cone_id || topicConeId;
+      // Store telemetry data on cone state
+      if (coneStates[telConeId]) {
+        coneStates[telConeId].telemetry = {
+          rssi: payload.rssi,
+          uptime_s: payload.uptime_s,
+          free_heap: payload.free_heap,
+          tilt_deg: payload.tilt_deg,
+        };
+      }
+      // Update detail panel if showing this cone
+      if (!detailPanel.classList.contains('hidden') && detailConeId.textContent === telConeId) {
+        showConeDetail(telConeId);
+      }
     }
   });
   // --- Detail Panel ---
@@ -512,6 +529,54 @@
   detailClose.addEventListener('click', () => {
     detailPanel.classList.add('hidden');
   });
+
+  // Enhance detail panel with telemetry data
+  const telemetryDiv = document.createElement('div');
+  telemetryDiv.id = 'detail-telemetry';
+  telemetryDiv.innerHTML = `
+    <h4>Health</h4>
+    <div class="detail-row"><span class="detail-label">WiFi Signal</span><span id="detail-rssi">--</span></div>
+    <div class="detail-row"><span class="detail-label">Uptime</span><span id="detail-uptime">--</span></div>
+    <div class="detail-row"><span class="detail-label">Free Memory</span><span id="detail-heap">--</span></div>
+    <div class="detail-row"><span class="detail-label">Current Tilt</span><span id="detail-tilt">--</span></div>
+  `;
+  // Insert before the "Recent Events" h4
+  const recentEventsH4 = detailPanel.querySelector('.detail-panel-body h4');
+  if (recentEventsH4) {
+    recentEventsH4.parentNode.insertBefore(telemetryDiv, recentEventsH4);
+  }
+
+  // Update telemetry fields when panel is visible
+  setInterval(() => {
+    if (detailPanel.classList.contains('hidden')) return;
+    const id = detailConeId.textContent;
+    const cone = coneStates[id];
+    if (!cone || !cone.telemetry) return;
+    const t = cone.telemetry;
+
+    const rssiEl = document.getElementById('detail-rssi');
+    const uptimeEl = document.getElementById('detail-uptime');
+    const heapEl = document.getElementById('detail-heap');
+    const tiltEl = document.getElementById('detail-tilt');
+
+    if (rssiEl) {
+      const rssi = t.rssi;
+      rssiEl.textContent = `${rssi} dBm`;
+      rssiEl.style.color = rssi > -50 ? '#22c55e' : rssi > -70 ? '#f59e0b' : '#ef4444';
+    }
+    if (uptimeEl) {
+      const mins = Math.floor(t.uptime_s / 60);
+      const hrs = Math.floor(mins / 60);
+      uptimeEl.textContent = hrs > 0 ? `${hrs}h ${mins % 60}m` : `${mins}m`;
+    }
+    if (heapEl) {
+      const kb = Math.round(t.free_heap / 1024);
+      heapEl.textContent = `${kb} KB`;
+    }
+    if (tiltEl) {
+      tiltEl.textContent = `${t.tilt_deg}°`;
+    }
+  }, 1000);
 
   function attachMarkerClick(id) {
     const cone = coneStates[id];

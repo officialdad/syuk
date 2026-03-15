@@ -107,6 +107,8 @@ void sendNtfyAlert(const char* event, float accelG, float tiltDeg) {
   String body;
   if (strcmp(event, "knockover") == 0) {
     body = "Cone " + String(CONE_ID) + " KNOCKED OVER! Tilt: " + String(tiltDeg, 1) + "deg";
+  } else if (strcmp(event, "intrusion") == 0) {
+    body = "Cone " + String(CONE_ID) + " INTRUSION detected nearby!";
   } else {
     body = "Cone " + String(CONE_ID) + " IMPACT detected! Force: " + String(accelG, 1) + "g";
   }
@@ -118,6 +120,25 @@ void sendNtfyAlert(const char* event, float accelG, float tiltDeg) {
     Serial.printf("Ntfy: Failed (%s)\n", http.errorToString(code).c_str());
   }
   http.end();
+}
+
+void publishTelemetry(float tiltDeg) {
+  if (!mqttClient.connected()) return;
+
+  JsonDocument doc;
+  doc["cone_id"] = CONE_ID;
+  doc["rssi"] = WiFi.RSSI();
+  doc["uptime_s"] = millis() / 1000;
+  doc["free_heap"] = ESP.getFreeHeap();
+  doc["tilt_deg"] = round(tiltDeg * 10) / 10.0;
+
+  char payload[256];
+  serializeJson(doc, payload, sizeof(payload));
+
+  char topic[64];
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_TELEMETRY, CONE_ID);
+
+  mqttClient.publish(topic, payload);
 }
 
 #endif

@@ -31,4 +31,13 @@
 #define NTFY_SERVER       "https://ntfy.sh"
 #define MQTT_RECONNECT_MS 5000
 
+// --- Telemetry ---
+#define TELEMETRY_INTERVAL_MS 30000
+#define MQTT_TOPIC_TELEMETRY "smartcones/%s/telemetry"
+
+// --- Intrusion Detection (PIR) ---
+#define PIR_PIN 23
+#define INTRUSION_COOLDOWN_MS 15000
+#define PIR_WARMUP_MS 60000
+
 #endif
