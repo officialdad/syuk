@@ -5,6 +5,9 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy --minify",
+    "rc": "node ../scripts/bump-version.mjs",
+    "rc:minor": "node ../scripts/bump-version.mjs minor",
+    "rc:major": "node ../scripts/bump-version.mjs major",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
