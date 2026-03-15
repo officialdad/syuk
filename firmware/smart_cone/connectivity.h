@@ -35,11 +35,12 @@ bool setupWiFi() {
   WiFiManagerParameter coneIdParam("cone_id", "Cone ID (e.g. cone-002)", dynamicConeId, CONE_ID_MAX_LEN);
   wm.addParameter(&coneIdParam);
 
-  // Dynamic AP name: SmartCone-{id} or SmartCone-Setup if no ID saved
-  String apName = String(AP_NAME_PREFIX) + (savedId.length() > 0 ? savedId : "Setup");
+  // Dynamic AP name based on Cone ID (always uses ID, never "Setup")
+  String apName = String(AP_NAME_PREFIX) + String(dynamicConeId);
 
-  Serial.println("WiFi: Starting WiFiManager...");
   Serial.printf("WiFi: AP name: %s\n", apName.c_str());
+  Serial.printf("WiFi: Current Cone ID: %s\n", dynamicConeId);
+  Serial.println("WiFi: Starting WiFiManager...");
 
   if (!wm.autoConnect(apName.c_str())) {
     Serial.println("WiFi: Failed to connect. Continuing offline.");
@@ -47,19 +48,18 @@ bool setupWiFi() {
     return false;
   }
 
-  // Save the Cone ID from the portal
+  // Always read the parameter value (works even on auto-connect if previously set)
   String newId = String(coneIdParam.getValue());
   newId.trim();
-  if (newId.length() > 0 && newId != String(dynamicConeId)) {
+  if (newId.length() > 0) {
     newId.toCharArray(dynamicConeId, CONE_ID_MAX_LEN);
     preferences.putString("cone_id", newId);
-    Serial.printf("WiFi: Cone ID saved: %s\n", dynamicConeId);
+    Serial.printf("WiFi: Cone ID: %s\n", dynamicConeId);
   }
 
   preferences.end();
   Serial.print("WiFi: Connected! IP: ");
   Serial.println(WiFi.localIP());
-  Serial.printf("WiFi: Cone ID: %s\n", dynamicConeId);
   return true;
 }
 

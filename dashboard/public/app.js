@@ -235,6 +235,9 @@
             body: JSON.stringify({ cone_id: id, lat, lng, label }),
           });
           addConeToMap(id, lat, lng, label);
+          coneStates[id].online = true;
+          updateMarker(id);
+          attachMarkerClick(id);
           updateStats();
           map.setView([lat, lng], 17);
           gpsStatus.textContent = `Cone "${id}" placed successfully!`;

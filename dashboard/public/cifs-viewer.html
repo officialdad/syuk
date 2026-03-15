@@ -53,7 +53,8 @@
 
     /* Endpoint URLs */
     .endpoint { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: #0f172a; border-radius: 0.5rem; border: 1px solid #334155; margin-bottom: 0.5rem; }
-    .endpoint-url { flex: 1; font-family: monospace; font-size: 0.82rem; color: #3b82f6; word-break: break-all; }
+    .endpoint-url { flex: 1; font-family: monospace; font-size: 0.82rem; color: #3b82f6; word-break: break-all; text-decoration: none; }
+    .endpoint-url:hover { text-decoration: underline; }
     .endpoint-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; min-width: 40px; }
     .endpoint .copy-btn { position: static; }
 
@@ -143,12 +144,12 @@
       <p style="font-size:0.8rem;color:#64748b;margin:1rem 0 0.5rem;text-transform:uppercase;letter-spacing:0.05em;">Feed Endpoints</p>
       <div class="endpoint">
         <span class="endpoint-label">XML</span>
-        <span class="endpoint-url" id="xml-url"></span>
+        <a class="endpoint-url" id="xml-url" href="" target="_blank"></a>
         <button class="copy-btn" onclick="copyText(document.getElementById('xml-url').textContent)"><i class="fa-solid fa-copy"></i> Copy</button>
       </div>
       <div class="endpoint">
         <span class="endpoint-label">JSON</span>
-        <span class="endpoint-url" id="json-url"></span>
+        <a class="endpoint-url" id="json-url" href="" target="_blank"></a>
         <button class="copy-btn" onclick="copyText(document.getElementById('json-url').textContent)"><i class="fa-solid fa-copy"></i> Copy</button>
       </div>
     </div>
@@ -176,8 +177,12 @@
 
     // Set endpoint URLs
     const baseUrl = window.location.origin;
-    document.getElementById('xml-url').textContent = baseUrl + '/api/feed/cifs.xml';
-    document.getElementById('json-url').textContent = baseUrl + '/api/feed/cifs.json';
+    const xmlUrl = baseUrl + '/api/feed/cifs.xml';
+    const jsonUrl = baseUrl + '/api/feed/cifs.json';
+    document.getElementById('xml-url').textContent = xmlUrl;
+    document.getElementById('xml-url').href = xmlUrl;
+    document.getElementById('json-url').textContent = jsonUrl;
+    document.getElementById('json-url').href = jsonUrl;
 
     // Tab switching
     document.querySelectorAll('.tab').forEach(tab => {

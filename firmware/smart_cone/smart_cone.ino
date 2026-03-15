@@ -153,8 +153,8 @@ void loop() {
   Serial.printf("%10.2f | %5.2f | %5.2f | %6.2f | %7.1f | %s\n",
                 ax, ay, az, magnitude, tiltDeg, stateToString(state));
 
-  // Auto-off buzzer after duration
-  if (buzzerActive && (millis() - buzzerStartTime >= BUZZER_DURATION_MS)) {
+  // Auto-off buzzer after duration (only for IMPACT_ALERT, not KNOCKED_OVER)
+  if (buzzerActive && state != KNOCKED_OVER && (millis() - buzzerStartTime >= BUZZER_DURATION_MS)) {
     buzzerOff();
   }
 
@@ -211,10 +211,22 @@ void loop() {
       break;
 
     case KNOCKED_OVER:
+      // Continuous distress beep pattern (1s on, 1s off)
+      if (!buzzerActive && (millis() - buzzerStartTime >= 1000)) {
+        digitalWrite(BUZZER_PIN, HIGH);
+        buzzerActive = true;
+        buzzerStartTime = millis();
+      } else if (buzzerActive && (millis() - buzzerStartTime >= 1000)) {
+        digitalWrite(BUZZER_PIN, LOW);
+        buzzerActive = false;
+        buzzerStartTime = millis();
+      }
+
       // Wait for recovery (tilt back below recovery threshold)
       if (tiltDeg < TILT_RECOVERY_DEG) {
         Serial.println("\n--- Cone recovered! Back upright ---\n");
         publishEvent("recovery", magnitude, tiltDeg);
+        buzzerOff(); // Ensure buzzer stops on recovery
         state = UPRIGHT;
       }
       break;
