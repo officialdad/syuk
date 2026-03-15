@@ -2,8 +2,8 @@ name: Deploy Dashboard
 
 on:
   push:
-    branches: [master]
-    paths: ['dashboard/**']
+    tags:
+      - 'v*.*.*'
 
 jobs:
   deploy:

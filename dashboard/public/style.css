@@ -678,6 +678,30 @@ h2 i {
   to { transform: translateX(0); opacity: 1; }
 }
 
+/* Clickable stat card */
+.stat-clickable {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stat-clickable:hover {
+  border-color: #3b82f6;
+  background: #253349;
+}
+
+.view-all {
+  color: #3b82f6;
+  font-size: 0.65rem;
+  margin-left: 0.3rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.stat-clickable:hover .view-all {
+  color: #60a5fa;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   header {

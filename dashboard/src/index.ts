@@ -154,6 +154,10 @@ app.get('/api/feed/cifs.json', async (c) => {
   return c.json({ incidents });
 });
 
+app.get('/api/version', (c) => {
+  return c.json({ version: '1.0.0' });
+});
+
 app.get('/api/config', (c) => {
   return c.json({
     broker: c.env.MQTT_BROKER_WSS,

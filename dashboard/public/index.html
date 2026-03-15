@@ -20,10 +20,10 @@
 
   <main>
     <section class="stats-bar">
-      <div class="stat">
+      <div class="stat stat-clickable" id="stat-total-card">
         <span class="stat-icon"><i class="fa-solid fa-road-barrier"></i></span>
         <span class="stat-value" id="stat-total">0</span>
-        <span class="stat-label">Total Cones</span>
+        <span class="stat-label">Total Cones <span class="view-all">View All <i class="fa-solid fa-chevron-right"></i></span></span>
       </div>
       <div class="stat">
         <span class="stat-icon"><i class="fa-solid fa-wifi"></i></span>
@@ -160,7 +160,7 @@
   <div id="toast-container" class="toast-container"></div>
 
   <footer class="site-footer">
-    &copy; Smart Cone 2026. All Rights Reserved.
+    <span id="app-version">v1.0.0</span> · &copy; Smart Cone 2026. All Rights Reserved.
   </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
