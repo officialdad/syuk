@@ -103,7 +103,7 @@
       </div>
       <div id="map"></div>
       <div id="setup-panel" class="setup-panel hidden">
-        <h3>Place Cone</h3>
+        <h3>Place Cone <button id="btn-setup-help" class="btn-icon" title="Setup Guide"><i class="fa-solid fa-circle-question"></i></button></h3>
         <div class="setup-form">
           <input type="text" id="new-cone-id" placeholder="Cone ID (e.g. cone-002)" />
           <input type="text" id="new-cone-label" placeholder="Label (e.g. Zone A - Entry)" />
@@ -164,6 +164,63 @@
       </div>
     </section>
   </main>
+
+  <div id="setup-overlay" class="overlay hidden">
+    <div class="overlay-backdrop"></div>
+    <div class="overlay-card">
+      <div class="overlay-header">
+        <h2><i class="fa-solid fa-book"></i> Setting Up a New Cone</h2>
+        <button id="overlay-close" class="btn btn-outline btn-sm">✕</button>
+      </div>
+      <div class="overlay-body">
+        <div class="overlay-step">
+          <span class="step-num">1</span>
+          <div>
+            <strong>Power on the ESP32</strong>
+            <p>Plug in via USB-C (power bank or laptop). LED shows <span style="color:#3b82f6">blue</span> = initializing. The cone creates a WiFi network: <strong>SmartCone-xxxx</strong></p>
+          </div>
+        </div>
+        <div class="overlay-step warning">
+          <span class="step-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+          <div>
+            <strong>WiFi Hotspot must use 2.4 GHz</strong>
+            <p>ESP32 does not support 5 GHz. Go to Hotspot Settings → Band → select 2.4 GHz.</p>
+          </div>
+        </div>
+        <div class="overlay-step">
+          <span class="step-num">2</span>
+          <div>
+            <strong>Connect to the cone's WiFi</strong>
+            <p><strong>Method A:</strong> Connect to "SmartCone-xxxx" WiFi, then open:</p>
+            <a href="http://192.168.4.1" target="_blank" class="btn btn-primary" style="margin:0.5rem 0;display:inline-flex;align-items:center;gap:0.3rem;font-size:0.8rem;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open Cone Portal (192.168.4.1)</a>
+            <p style="margin-top:0.5rem;"><strong>Method B:</strong> Connect to "SmartCone-xxxx" → phone shows "No internet" → tap the network → tap cog icon → "Manage router"</p>
+          </div>
+        </div>
+        <div class="overlay-step">
+          <span class="step-num">3</span>
+          <div>
+            <strong>Configure WiFi credentials</strong>
+            <p><strong>Using phone hotspot?</strong> Turn OFF hotspot first → connect to cone → enter hotspot SSID + password → Save → turn hotspot back ON. ESP32 auto-connects within seconds.</p>
+            <p><strong>Using site WiFi?</strong> Just enter the WiFi name and password.</p>
+          </div>
+        </div>
+        <div class="overlay-step">
+          <span class="step-num">4</span>
+          <div>
+            <strong>Set Cone ID</strong>
+            <p>Auto-generated ID (e.g. cone-a7f3) is pre-filled. Change it if you want a custom name. Tap Save.</p>
+          </div>
+        </div>
+        <div class="overlay-step">
+          <span class="step-num">5</span>
+          <div>
+            <strong>Place on map</strong>
+            <p>Dashboard shows "New Cone Detected" toast. Click "Place Now" or enter the Cone ID below and click "Use My GPS Location".</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div id="toast-container" class="toast-container"></div>
 

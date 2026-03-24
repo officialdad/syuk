@@ -160,7 +160,7 @@ void mqttLoop() {
   mqttClient.loop();
 }
 
-bool publishEvent(const char* event, float accelG, float tiltDeg) {
+bool publishEvent(const char* event, float accelG, float tiltDeg, unsigned long durationS = 0) {
   if (!mqttClient.connected()) return false;
 
   JsonDocument doc;
@@ -169,6 +169,9 @@ bool publishEvent(const char* event, float accelG, float tiltDeg) {
   doc["accel_g"] = round(accelG * 100) / 100.0;
   doc["tilt_deg"] = round(tiltDeg * 10) / 10.0;
   doc["uptime_s"] = millis() / 1000;
+  if (durationS > 0) {
+    doc["duration_s"] = durationS;
+  }
 
   char payload[256];
   serializeJson(doc, payload, sizeof(payload));

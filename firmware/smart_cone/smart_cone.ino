@@ -21,6 +21,7 @@ bool buzzerActive = false;
 bool tiltTimerRunning = false;
 bool mqttConnected = false;
 unsigned long lastTelemetryTime = 0;
+unsigned long knockoverStartTime = 0;
 // unsigned long lastIntrusionTime = 0;  // PIR — enable when hardware wired
 // unsigned long pirWarmupStart = 0;
 
@@ -191,6 +192,7 @@ void loop() {
           tiltStartTime = millis();
         } else if (millis() - tiltStartTime >= TILT_SUSTAIN_MS) {
           Serial.println("\n*** KNOCKED OVER! ***\n");
+          knockoverStartTime = millis();
           state = KNOCKED_OVER;
           setLED(true, false); // Red
           buzzerOn();
@@ -227,7 +229,8 @@ void loop() {
       // Wait for recovery (tilt back below recovery threshold)
       if (tiltDeg < TILT_RECOVERY_DEG) {
         Serial.println("\n--- Cone recovered! Back upright ---\n");
-        publishEvent("recovery", magnitude, tiltDeg);
+        unsigned long durationS = (millis() - knockoverStartTime) / 1000;
+        publishEvent("recovery", magnitude, tiltDeg, durationS);
         buzzerOff(); // Ensure buzzer stops on recovery
         state = UPRIGHT;
       }

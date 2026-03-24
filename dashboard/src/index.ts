@@ -166,4 +166,31 @@ app.get('/api/config', (c) => {
   })
 })
 
+// POST /api/events — persist an event
+app.post('/api/events', async (c) => {
+  const body = await c.req.json();
+  const { cone_id, event, accel_g, tilt_deg, duration_s } = body;
+  const timestamp = new Date().toISOString();
+  const key = `event:${timestamp}:${cone_id || 'unknown'}`;
+  const eventData = { cone_id, event, accel_g, tilt_deg, duration_s, timestamp };
+  // Store with 7-day TTL
+  await c.env.CONE_LOCATIONS.put(key, JSON.stringify(eventData), { expirationTtl: 604800 });
+  return c.json(eventData, 201);
+});
+
+// GET /api/events — list recent events
+app.get('/api/events', async (c) => {
+  const limit = Number(c.req.query('limit') || '50');
+  const list = await c.env.CONE_LOCATIONS.list({ prefix: 'event:', limit: 1000 });
+  // Keys are sorted by timestamp (ISO format sorts correctly)
+  const keys = list.keys.sort((a, b) => b.name.localeCompare(a.name)).slice(0, limit);
+  const events = await Promise.all(
+    keys.map(async (key) => {
+      const value = await c.env.CONE_LOCATIONS.get(key.name, 'json');
+      return value;
+    })
+  );
+  return c.json(events.filter(Boolean));
+});
+
 export default app

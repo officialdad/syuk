@@ -385,6 +385,19 @@
 
   // --- Load cones and start MQTT ---
   await loadCones();
+
+  // Load persisted events
+  try {
+    const eventsRes = await fetch('/api/events?limit=50');
+    const events = await eventsRes.json();
+    events.reverse().forEach(evt => {
+      addEventRow(new Date(evt.timestamp), evt.event, evt.accel_g, evt.tilt_deg, evt.cone_id);
+      if (evt.cone_id) recordConeEvent(evt.cone_id, evt.event, evt.accel_g, evt.tilt_deg);
+    });
+  } catch (err) {
+    console.error('Failed to load events:', err);
+  }
+
   Object.keys(coneStates).forEach(attachMarkerClick);
 
   let config;
@@ -493,6 +506,12 @@
 
       // Add to event log
       addEventRow(now, eventType, accelG, tiltDeg, eventConeId);
+      // Persist event to KV
+      fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cone_id: eventConeId, event: eventType, accel_g: accelG, tilt_deg: tiltDeg, duration_s: payload.duration_s }),
+      }).catch(err => console.error('Failed to persist event:', err));
       recordConeEvent(eventConeId, eventType, accelG, tiltDeg);
       attachMarkerClick(eventConeId);
 
@@ -519,7 +538,6 @@
       }
 
       setDeviceOnline(online);
-      if (statusConeId) coneId.textContent = statusConeId;
       lastUpdate.textContent = formatTime(now);
 
       // Update map marker
@@ -786,4 +804,22 @@
   fleetListClose.addEventListener('click', () => {
     fleetList.classList.add('hidden');
   });
+
+  // --- Setup Help Overlay ---
+  const setupOverlay = document.getElementById('setup-overlay');
+  const btnSetupHelp = document.getElementById('btn-setup-help');
+  const overlayClose = document.getElementById('overlay-close');
+  const overlayBackdrop = setupOverlay ? setupOverlay.querySelector('.overlay-backdrop') : null;
+
+  if (btnSetupHelp && setupOverlay) {
+    btnSetupHelp.addEventListener('click', () => {
+      setupOverlay.classList.remove('hidden');
+    });
+    overlayClose.addEventListener('click', () => {
+      setupOverlay.classList.add('hidden');
+    });
+    overlayBackdrop.addEventListener('click', () => {
+      setupOverlay.classList.add('hidden');
+    });
+  }
 })();
