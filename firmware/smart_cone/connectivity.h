@@ -96,18 +96,18 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     ESP.restart();
   } else if (strcmp(action, "identify") == 0) {
     Serial.println("MQTT: Identify command — flashing LED!");
-    // Flash LED rapidly for 5 seconds
+    // Flash LED rapidly for 5 seconds (purple = identify)
     for (int i = 0; i < 25; i++) {
-      digitalWrite(LED_RED_PIN, HIGH); digitalWrite(LED_GREEN_PIN, HIGH); // yellow
+      digitalWrite(LED_RED_PIN, HIGH); digitalWrite(LED_BLUE_PIN, HIGH); // purple
       delay(100);
-      digitalWrite(LED_RED_PIN, LOW); digitalWrite(LED_GREEN_PIN, LOW); // off
+      digitalWrite(LED_RED_PIN, LOW); digitalWrite(LED_BLUE_PIN, LOW); // off
       delay(100);
     }
     // Restore normal state
     if (mqttClient.connected()) {
-      digitalWrite(LED_RED_PIN, LOW); digitalWrite(LED_GREEN_PIN, HIGH); // green
+      digitalWrite(LED_RED_PIN, LOW); digitalWrite(LED_GREEN_PIN, HIGH); digitalWrite(LED_BLUE_PIN, LOW); // green
     } else {
-      digitalWrite(LED_RED_PIN, HIGH); digitalWrite(LED_GREEN_PIN, LOW); // red
+      digitalWrite(LED_RED_PIN, LOW); digitalWrite(LED_GREEN_PIN, LOW); digitalWrite(LED_BLUE_PIN, HIGH); // blue
     }
   }
 }

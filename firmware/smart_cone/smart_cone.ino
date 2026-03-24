@@ -26,9 +26,10 @@ unsigned long lastTelemetryTime = 0;
 
 // --- Helper Functions ---
 
-void setLED(bool red, bool green) {
+void setLED(bool red, bool green, bool blue = false) {
   digitalWrite(LED_RED_PIN, red ? HIGH : LOW);
   digitalWrite(LED_GREEN_PIN, green ? HIGH : LOW);
+  digitalWrite(LED_BLUE_PIN, blue ? HIGH : LOW);
 }
 
 void buzzerOn() {
@@ -63,7 +64,8 @@ void setup() {
   // Init LED pins
   pinMode(LED_RED_PIN, OUTPUT);
   pinMode(LED_GREEN_PIN, OUTPUT);
-  setLED(true, false); // Red = initializing / not connected
+  pinMode(LED_BLUE_PIN, OUTPUT);
+  setLED(false, false, true); // Blue = initializing
 
   // Init buzzer pin
   pinMode(BUZZER_PIN, OUTPUT);
@@ -166,7 +168,7 @@ void loop() {
       if (mqttConnected) {
         setLED(false, true); // Green = connected
       } else {
-        setLED(true, false); // Red = not connected
+        setLED(false, false, true); // Blue = not connected
       }
 
       // Skip detection while buzzer is vibrating (prevents false triggers)
