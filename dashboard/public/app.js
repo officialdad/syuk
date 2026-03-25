@@ -563,12 +563,7 @@
 
       // Add to event log
       addEventRow(now, eventType, accelG, tiltDeg, eventConeId);
-      // Persist event to KV
-      fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cone_id: eventConeId, event: eventType, accel_g: accelG, tilt_deg: tiltDeg, duration_s: payload.duration_s }),
-      }).catch(err => console.error('Failed to persist event:', err));
+      // Events are persisted by ESP32 directly — no duplicate POST from browser
       recordConeEvent(eventConeId, eventType, accelG, tiltDeg);
       attachMarkerClick(eventConeId);
 

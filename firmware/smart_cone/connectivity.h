@@ -210,6 +210,7 @@ void networkTask(void* parameter) {
         WiFiClientSecure apiClient;
         apiClient.setInsecure();
         HTTPClient http;
+        http.setTimeout(5000); // 5s timeout to avoid blocking queue
         String url = String(DASHBOARD_API) + "/api/events";
         http.begin(apiClient, url);
         http.addHeader("Content-Type", "application/json");
@@ -227,6 +228,7 @@ void networkTask(void* parameter) {
         WiFiClientSecure ntfyClient;
         ntfyClient.setInsecure();
         HTTPClient http;
+        http.setTimeout(5000); // 5s timeout
         String url = String(NTFY_SERVER) + "/" + String(NTFY_TOPIC);
         http.begin(ntfyClient, url);
         http.addHeader("Title", "Smart Cone Alert");
