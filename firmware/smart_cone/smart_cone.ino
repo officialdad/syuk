@@ -105,6 +105,7 @@ void setup() {
   // Phase 2: Connectivity
   bool wifiOk = setupWiFi();
   setupMQTT();
+  setupNetworkTask();
 
   if (wifiOk && mqttReconnect()) {
     mqttConnected = true;
@@ -183,7 +184,6 @@ void loop() {
         setLED(true, false); // Red
         buzzerOn();
         publishEvent("impact", magnitude, tiltDeg);
-        sendNtfyAlert("impact", magnitude, tiltDeg);
       }
       // Check for tilt (start of potential knockover)
       else if (tiltDeg > TILT_THRESHOLD_DEG) {
@@ -195,11 +195,12 @@ void loop() {
           knockoverStartTime = millis();
           state = KNOCKED_OVER;
           setLED(true, false); // Red
-          // Start pulse pattern immediately (no initial long beep)
+          // Start buzzer immediately
+          digitalWrite(BUZZER_PIN, HIGH);
+          buzzerActive = true;
           buzzerStartTime = millis();
-          buzzerActive = false;
+          // Network calls (non-blocking, queued to core 0)
           publishEvent("knockover", magnitude, tiltDeg);
-          sendNtfyAlert("knockover", magnitude, tiltDeg);
           tiltTimerRunning = false;
         }
       } else {
@@ -211,7 +212,7 @@ void loop() {
       // Wait for cooldown, then return to upright
       if (millis() - alertStartTime >= ALERT_COOLDOWN_MS) {
         Serial.println("\n--- Cooldown complete, resuming monitoring ---\n");
-        publishEvent("recovery", magnitude, tiltDeg);
+        publishEventNoNtfy("recovery", magnitude, tiltDeg);
         state = UPRIGHT;
       }
       break;
@@ -232,7 +233,7 @@ void loop() {
       if (tiltDeg < TILT_RECOVERY_DEG) {
         Serial.println("\n--- Cone recovered! Back upright ---\n");
         unsigned long durationS = (millis() - knockoverStartTime) / 1000;
-        publishEvent("recovery", magnitude, tiltDeg, durationS);
+        publishEventNoNtfy("recovery", magnitude, tiltDeg, durationS);
         buzzerOff(); // Ensure buzzer stops on recovery
         state = UPRIGHT;
       }

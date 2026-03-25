@@ -7,6 +7,9 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <Preferences.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/queue.h>
 #include "config.h"
 #include "secrets.h"
 
@@ -17,6 +20,18 @@ Preferences preferences;
 char dynamicConeId[CONE_ID_MAX_LEN] = "";
 
 unsigned long lastMqttReconnect = 0;
+
+// --- Event Queue for background network ---
+struct EventMessage {
+  char event[16];
+  float accelG;
+  float tiltDeg;
+  unsigned long durationS;
+  bool sendNtfy;
+};
+
+QueueHandle_t eventQueue = NULL;
+TaskHandle_t networkTaskHandle = NULL;
 
 bool setupWiFi() {
   // Load or generate Cone ID
@@ -161,77 +176,127 @@ void mqttLoop() {
   mqttClient.loop();
 }
 
-bool publishEvent(const char* event, float accelG, float tiltDeg, unsigned long durationS = 0) {
-  JsonDocument doc;
-  doc["cone_id"] = dynamicConeId;
-  doc["event"] = event;
-  doc["accel_g"] = round(accelG * 100) / 100.0;
-  doc["tilt_deg"] = round(tiltDeg * 10) / 10.0;
-  doc["uptime_s"] = millis() / 1000;
-  if (durationS > 0) {
-    doc["duration_s"] = durationS;
-  }
+void networkTask(void* parameter) {
+  EventMessage msg;
+  for (;;) {
+    if (xQueueReceive(eventQueue, &msg, portMAX_DELAY) == pdTRUE) {
+      // Build JSON payload
+      JsonDocument doc;
+      doc["cone_id"] = dynamicConeId;
+      doc["event"] = msg.event;
+      doc["accel_g"] = round(msg.accelG * 100) / 100.0;
+      doc["tilt_deg"] = round(msg.tiltDeg * 10) / 10.0;
+      doc["uptime_s"] = millis() / 1000;
+      if (msg.durationS > 0) {
+        doc["duration_s"] = msg.durationS;
+      }
 
-  char payload[256];
-  serializeJson(doc, payload, sizeof(payload));
+      char payload[256];
+      serializeJson(doc, payload, sizeof(payload));
 
-  // Publish via MQTT
-  bool mqttOk = false;
-  if (mqttClient.connected()) {
-    char topic[64];
-    snprintf(topic, sizeof(topic), MQTT_TOPIC_EVENT, dynamicConeId);
-    mqttOk = mqttClient.publish(topic, payload);
-    if (mqttOk) {
-      Serial.printf("MQTT: Published to %s\n", topic);
-    } else {
-      Serial.println("MQTT: Publish failed");
+      // MQTT publish
+      if (mqttClient.connected()) {
+        char topic[64];
+        snprintf(topic, sizeof(topic), MQTT_TOPIC_EVENT, dynamicConeId);
+        if (mqttClient.publish(topic, payload)) {
+          Serial.printf("MQTT: Published to %s\n", topic);
+        } else {
+          Serial.println("MQTT: Publish failed");
+        }
+      }
+
+      // Persist to dashboard API
+      if (WiFi.status() == WL_CONNECTED) {
+        HTTPClient http;
+        String url = String(DASHBOARD_API) + "/api/events";
+        http.begin(url);
+        http.addHeader("Content-Type", "application/json");
+        int code = http.POST(payload);
+        if (code > 0) {
+          Serial.printf("API: Persisted event (%d)\n", code);
+        } else {
+          Serial.printf("API: Failed (%s)\n", http.errorToString(code).c_str());
+        }
+        http.end();
+      }
+
+      // Send Ntfy alert
+      if (msg.sendNtfy && WiFi.status() == WL_CONNECTED) {
+        HTTPClient http;
+        String url = String(NTFY_SERVER) + "/" + String(NTFY_TOPIC);
+        http.begin(url);
+        http.addHeader("Title", "Smart Cone Alert");
+        http.addHeader("Priority", "high");
+        http.addHeader("Tags", "warning,construction");
+
+        String body;
+        if (strcmp(msg.event, "knockover") == 0) {
+          body = "Cone " + String(dynamicConeId) + " KNOCKED OVER! Tilt: " + String(msg.tiltDeg, 1) + "deg";
+        } else if (strcmp(msg.event, "intrusion") == 0) {
+          body = "Cone " + String(dynamicConeId) + " INTRUSION detected nearby!";
+        } else {
+          body = "Cone " + String(dynamicConeId) + " IMPACT detected! Force: " + String(msg.accelG, 1) + "g";
+        }
+
+        int code = http.POST(body);
+        if (code > 0) {
+          Serial.printf("Ntfy: Sent (%d)\n", code);
+        } else {
+          Serial.printf("Ntfy: Failed (%s)\n", http.errorToString(code).c_str());
+        }
+        http.end();
+      }
     }
   }
-
-  // Also persist directly to dashboard API
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    String url = String(DASHBOARD_API) + "/api/events";
-    http.begin(url);
-    http.addHeader("Content-Type", "application/json");
-    int code = http.POST(payload);
-    if (code > 0) {
-      Serial.printf("API: Persisted event (%d)\n", code);
-    } else {
-      Serial.printf("API: Failed (%s)\n", http.errorToString(code).c_str());
-    }
-    http.end();
-  }
-
-  return mqttOk;
 }
 
-void sendNtfyAlert(const char* event, float accelG, float tiltDeg) {
-  if (WiFi.status() != WL_CONNECTED) return;
+bool publishEvent(const char* event, float accelG, float tiltDeg, unsigned long durationS = 0) {
+  if (!eventQueue) return false;
 
-  HTTPClient http;
-  String url = String(NTFY_SERVER) + "/" + String(NTFY_TOPIC);
-  http.begin(url);
-  http.addHeader("Title", "Smart Cone Alert");
-  http.addHeader("Priority", "high");
-  http.addHeader("Tags", "warning,construction");
+  EventMessage msg;
+  strncpy(msg.event, event, sizeof(msg.event) - 1);
+  msg.event[sizeof(msg.event) - 1] = '\0';
+  msg.accelG = accelG;
+  msg.tiltDeg = tiltDeg;
+  msg.durationS = durationS;
+  msg.sendNtfy = true;
 
-  String body;
-  if (strcmp(event, "knockover") == 0) {
-    body = "Cone " + String(dynamicConeId) + " KNOCKED OVER! Tilt: " + String(tiltDeg, 1) + "deg";
-  } else if (strcmp(event, "intrusion") == 0) {
-    body = "Cone " + String(dynamicConeId) + " INTRUSION detected nearby!";
+  if (xQueueSend(eventQueue, &msg, 0) == pdTRUE) {
+    Serial.printf("Event queued: %s\n", event);
+    return true;
   } else {
-    body = "Cone " + String(dynamicConeId) + " IMPACT detected! Force: " + String(accelG, 1) + "g";
+    Serial.println("Event queue full!");
+    return false;
   }
+}
 
-  int code = http.POST(body);
-  if (code > 0) {
-    Serial.printf("Ntfy: Sent (%d)\n", code);
-  } else {
-    Serial.printf("Ntfy: Failed (%s)\n", http.errorToString(code).c_str());
+bool publishEventNoNtfy(const char* event, float accelG, float tiltDeg, unsigned long durationS = 0) {
+  if (!eventQueue) return false;
+
+  EventMessage msg;
+  strncpy(msg.event, event, sizeof(msg.event) - 1);
+  msg.event[sizeof(msg.event) - 1] = '\0';
+  msg.accelG = accelG;
+  msg.tiltDeg = tiltDeg;
+  msg.durationS = durationS;
+  msg.sendNtfy = false;
+
+  if (xQueueSend(eventQueue, &msg, 0) == pdTRUE) {
+    Serial.printf("Event queued: %s\n", event);
+    return true;
   }
-  http.end();
+  return false;
+}
+
+void setupNetworkTask() {
+  eventQueue = xQueueCreate(10, sizeof(EventMessage));
+  if (eventQueue == NULL) {
+    Serial.println("ERROR: Failed to create event queue!");
+    return;
+  }
+  // Run network task on core 0 (loop runs on core 1)
+  xTaskCreatePinnedToCore(networkTask, "NetworkTask", 8192, NULL, 1, &networkTaskHandle, 0);
+  Serial.println("Network task started on core 0");
 }
 
 void publishTelemetry(float tiltDeg) {
