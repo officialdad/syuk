@@ -30,7 +30,7 @@
 #define MQTT_TOPIC_EVENT  "smartcones/%s/event"
 #define MQTT_TOPIC_STATUS "smartcones/%s/status"
 #define NTFY_SERVER       "https://ntfy.sh"
-#define DASHBOARD_API     "https://smartcone-dashboard.ancient-shape-7047.workers.dev"
+#define DASHBOARD_API     "https://kon.automasi.my"
 #define MQTT_RECONNECT_MS 5000
 
 // --- Telemetry ---
