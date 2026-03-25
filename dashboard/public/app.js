@@ -66,6 +66,17 @@
   const coneStates = {}; // { cone_id: { state, online, marker, lat, lng, label } }
   const coneEventHistory = {}; // { cone_id: [{time, event, accelG, tiltDeg}] }
 
+  // Detail panel DOM elements (needed early for recordConeEvent)
+  const detailPanel = document.getElementById('detail-panel');
+  const detailClose = document.getElementById('detail-close');
+  const detailConeId = document.getElementById('detail-cone-id');
+  const detailState = document.getElementById('detail-state');
+  const detailOnline = document.getElementById('detail-online');
+  const detailLabelEl = document.getElementById('detail-label');
+  const detailCoords = document.getElementById('detail-coords');
+  const detailLastEvent = document.getElementById('detail-last-event');
+  const detailEvents = document.getElementById('detail-events');
+
   // --- Map Setup ---
   let userLat = 3.139, userLng = 101.6869; // Fallback: KL
   const map = L.map('map').setView([userLat, userLng], 15);
@@ -567,16 +578,6 @@
     }
   });
   // --- Detail Panel ---
-  const detailPanel = document.getElementById('detail-panel');
-  const detailClose = document.getElementById('detail-close');
-  const detailConeId = document.getElementById('detail-cone-id');
-  const detailState = document.getElementById('detail-state');
-  const detailOnline = document.getElementById('detail-online');
-  const detailLabelEl = document.getElementById('detail-label');
-  const detailCoords = document.getElementById('detail-coords');
-  const detailLastEvent = document.getElementById('detail-last-event');
-  const detailEvents = document.getElementById('detail-events');
-
   function showConeDetail(id) {
     const cone = coneStates[id];
     if (!cone) return;
