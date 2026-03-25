@@ -491,6 +491,7 @@
       if (derivedState) {
         updateConeStatus(derivedState, eventConeId, now);
       }
+      setDeviceOnline(true); // Cone is clearly active if sending events
 
       // Update map marker
       if (coneStates[eventConeId]) {

@@ -215,12 +215,12 @@ void loop() {
       break;
 
     case KNOCKED_OVER:
-      // Continuous distress beep pattern (1s on, 1s off)
-      if (!buzzerActive && (millis() - buzzerStartTime >= 1000)) {
+      // Rapid emergency pulse (200ms on, 200ms off — 2.5 beeps/sec)
+      if (!buzzerActive && (millis() - buzzerStartTime >= 200)) {
         digitalWrite(BUZZER_PIN, HIGH);
         buzzerActive = true;
         buzzerStartTime = millis();
-      } else if (buzzerActive && (millis() - buzzerStartTime >= 1000)) {
+      } else if (buzzerActive && (millis() - buzzerStartTime >= 200)) {
         digitalWrite(BUZZER_PIN, LOW);
         buzzerActive = false;
         buzzerStartTime = millis();
