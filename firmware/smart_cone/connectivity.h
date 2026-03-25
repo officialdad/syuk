@@ -205,11 +205,13 @@ void networkTask(void* parameter) {
         }
       }
 
-      // Persist to dashboard API
+      // Persist to dashboard API (dedicated secure client for core 0)
       if (WiFi.status() == WL_CONNECTED) {
+        WiFiClientSecure apiClient;
+        apiClient.setInsecure();
         HTTPClient http;
         String url = String(DASHBOARD_API) + "/api/events";
-        http.begin(url);
+        http.begin(apiClient, url);
         http.addHeader("Content-Type", "application/json");
         int code = http.POST(payload);
         if (code > 0) {
@@ -220,11 +222,13 @@ void networkTask(void* parameter) {
         http.end();
       }
 
-      // Send Ntfy alert
+      // Send Ntfy alert (dedicated secure client for core 0)
       if (msg.sendNtfy && WiFi.status() == WL_CONNECTED) {
+        WiFiClientSecure ntfyClient;
+        ntfyClient.setInsecure();
         HTTPClient http;
         String url = String(NTFY_SERVER) + "/" + String(NTFY_TOPIC);
-        http.begin(url);
+        http.begin(ntfyClient, url);
         http.addHeader("Title", "Smart Cone Alert");
         http.addHeader("Priority", "high");
         http.addHeader("Tags", "warning,construction");
