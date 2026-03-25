@@ -64,6 +64,7 @@
   let alertsToday = 0;
   let lastIncidentTime = null;
   const coneStates = {}; // { cone_id: { state, online, marker, lat, lng, label } }
+  const coneEventHistory = {}; // { cone_id: [{time, event, accelG, tiltDeg}] }
 
   // --- Map Setup ---
   let userLat = 3.139, userLng = 101.6869; // Fallback: KL
@@ -575,9 +576,6 @@
   const detailCoords = document.getElementById('detail-coords');
   const detailLastEvent = document.getElementById('detail-last-event');
   const detailEvents = document.getElementById('detail-events');
-
-  // Track events per cone for detail view
-  const coneEventHistory = {}; // { cone_id: [{time, event, accelG, tiltDeg}] }
 
   function showConeDetail(id) {
     const cone = coneStates[id];
