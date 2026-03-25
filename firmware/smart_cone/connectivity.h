@@ -116,6 +116,7 @@ void setupMQTT() {
   espClient.setInsecure();
   mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
   mqttClient.setBufferSize(512);
+  mqttClient.setKeepAlive(60); // Send ping every 60s to keep connection alive
   mqttClient.setCallback(mqttCallback);
 }
 

@@ -10,10 +10,10 @@
 // RGB LED (KY-016)
 #define LED_RED_PIN   16
 #define LED_GREEN_PIN 17
-#define LED_BLUE_PIN  18
+#define LED_BLUE_PIN  5
 
 // Active Buzzer
-#define BUZZER_PIN 19
+#define BUZZER_PIN 13
 
 // --- Detection Thresholds ---
 
