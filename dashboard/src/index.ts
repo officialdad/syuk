@@ -155,7 +155,7 @@ app.get('/api/feed/cifs.json', async (c) => {
 });
 
 app.get('/api/version', (c) => {
-  return c.json({ version: '1.0.7-rc.1' });
+  return c.json({ version: '1.0.8-rc.1' });
 });
 
 app.get('/api/config', (c) => {
