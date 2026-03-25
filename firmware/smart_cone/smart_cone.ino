@@ -195,7 +195,9 @@ void loop() {
           knockoverStartTime = millis();
           state = KNOCKED_OVER;
           setLED(true, false); // Red
-          buzzerOn();
+          // Start pulse pattern immediately (no initial long beep)
+          buzzerStartTime = millis();
+          buzzerActive = false;
           publishEvent("knockover", magnitude, tiltDeg);
           sendNtfyAlert("knockover", magnitude, tiltDeg);
           tiltTimerRunning = false;
@@ -215,12 +217,12 @@ void loop() {
       break;
 
     case KNOCKED_OVER:
-      // Rapid emergency pulse (200ms on, 200ms off — 2.5 beeps/sec)
-      if (!buzzerActive && (millis() - buzzerStartTime >= 200)) {
+      // Emergency alarm pulse (500ms on, 500ms off)
+      if (!buzzerActive && (millis() - buzzerStartTime >= 500)) {
         digitalWrite(BUZZER_PIN, HIGH);
         buzzerActive = true;
         buzzerStartTime = millis();
-      } else if (buzzerActive && (millis() - buzzerStartTime >= 200)) {
+      } else if (buzzerActive && (millis() - buzzerStartTime >= 500)) {
         digitalWrite(BUZZER_PIN, LOW);
         buzzerActive = false;
         buzzerStartTime = millis();
