@@ -212,14 +212,24 @@
   }
 
   // --- Event Log ---
+  function formatDate(date) {
+    return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
+  }
+
   function addEventRow(time, eventType, accelG, tiltDeg, id) {
     noEvents.style.display = 'none';
     const row = document.createElement('tr');
 
+    const tdDate = document.createElement('td');
+    tdDate.textContent = formatDate(time);
+    tdDate.setAttribute('data-label', 'Date');
+
     const tdTime = document.createElement('td');
     tdTime.textContent = formatTime(time);
+    tdTime.setAttribute('data-label', 'Time');
 
     const tdEvent = document.createElement('td');
+    tdEvent.setAttribute('data-label', 'Event');
     const badge = document.createElement('span');
     badge.className = 'event-badge ' + (eventType === 'impact' ? 'impact' : eventType === 'knockover' ? 'knocked_over' : eventType === 'recovery' ? 'recovery' : eventType === 'intrusion' ? 'intrusion' : 'default');
     let badgeIcon = '';
@@ -232,14 +242,17 @@
 
     const tdAccel = document.createElement('td');
     tdAccel.textContent = accelG != null ? Number(accelG).toFixed(2) : '--';
+    tdAccel.setAttribute('data-label', 'Accel (g)');
 
     const tdTilt = document.createElement('td');
     tdTilt.textContent = tiltDeg != null ? Number(tiltDeg).toFixed(1) : '--';
+    tdTilt.setAttribute('data-label', 'Tilt (deg)');
 
     const tdId = document.createElement('td');
     tdId.textContent = id || '--';
+    tdId.setAttribute('data-label', 'Cone ID');
 
-    row.append(tdTime, tdEvent, tdAccel, tdTilt, tdId);
+    row.append(tdDate, tdTime, tdEvent, tdAccel, tdTilt, tdId);
 
     if (eventTbody.firstChild) {
       eventTbody.insertBefore(row, eventTbody.firstChild);

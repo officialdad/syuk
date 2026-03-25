@@ -816,13 +816,36 @@ h2 i {
     font-size: 0.9rem;
   }
 
-  /* Event log: readable */
-  table {
+  /* Event log: cards on mobile */
+  #event-table thead {
+    display: none;
+  }
+
+  #event-table tbody tr {
+    display: block;
+    margin-bottom: 0.5rem;
+    background: #0f172a;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid #334155;
+  }
+
+  #event-table tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.2rem 0;
+    border: none;
     font-size: 0.8rem;
   }
 
-  thead th, tbody td {
-    padding: 0.4rem 0.5rem;
+  #event-table tbody td::before {
+    content: attr(data-label);
+    font-size: 0.7rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 500;
   }
 
   /* Fleet list */
