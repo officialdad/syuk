@@ -162,8 +162,6 @@ void mqttLoop() {
 }
 
 bool publishEvent(const char* event, float accelG, float tiltDeg, unsigned long durationS = 0) {
-  if (!mqttClient.connected()) return false;
-
   JsonDocument doc;
   doc["cone_id"] = dynamicConeId;
   doc["event"] = event;
@@ -177,16 +175,35 @@ bool publishEvent(const char* event, float accelG, float tiltDeg, unsigned long 
   char payload[256];
   serializeJson(doc, payload, sizeof(payload));
 
-  char topic[64];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_EVENT, dynamicConeId);
-
-  bool ok = mqttClient.publish(topic, payload);
-  if (ok) {
-    Serial.printf("MQTT: Published to %s\n", topic);
-  } else {
-    Serial.println("MQTT: Publish failed");
+  // Publish via MQTT
+  bool mqttOk = false;
+  if (mqttClient.connected()) {
+    char topic[64];
+    snprintf(topic, sizeof(topic), MQTT_TOPIC_EVENT, dynamicConeId);
+    mqttOk = mqttClient.publish(topic, payload);
+    if (mqttOk) {
+      Serial.printf("MQTT: Published to %s\n", topic);
+    } else {
+      Serial.println("MQTT: Publish failed");
+    }
   }
-  return ok;
+
+  // Also persist directly to dashboard API
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    String url = String(DASHBOARD_API) + "/api/events";
+    http.begin(url);
+    http.addHeader("Content-Type", "application/json");
+    int code = http.POST(payload);
+    if (code > 0) {
+      Serial.printf("API: Persisted event (%d)\n", code);
+    } else {
+      Serial.printf("API: Failed (%s)\n", http.errorToString(code).c_str());
+    }
+    http.end();
+  }
+
+  return mqttOk;
 }
 
 void sendNtfyAlert(const char* event, float accelG, float tiltDeg) {
