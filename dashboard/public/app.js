@@ -425,6 +425,31 @@
 
   Object.keys(coneStates).forEach(attachMarkerClick);
 
+  // --- Connection health: track last MQTT message received ---
+  let lastMqttMessageTime = 0;
+  let mqttConnected = false;
+
+  function updateConnectionHealth() {
+    if (!mqttConnected) {
+      setConnectionState('disconnected');
+      return;
+    }
+    const sinceLast = Date.now() - lastMqttMessageTime;
+    if (lastMqttMessageTime === 0) {
+      // Connected but no messages yet — waiting
+      connectionText.textContent = 'Connected — waiting for data';
+    } else if (sinceLast > 60000) {
+      // No message in 60s — stale
+      connectionText.textContent = 'Connected — no data for ' + Math.round(sinceLast / 1000) + 's';
+      connectionDot.className = 'dot connecting'; // Amber = stale
+    } else {
+      connectionText.textContent = 'Connected';
+      connectionDot.className = 'dot connected';
+    }
+  }
+
+  setInterval(updateConnectionHealth, 5000);
+
   let config;
   try {
     const res = await fetch('/api/config');
@@ -444,7 +469,9 @@
 
   client.on('connect', function () {
     console.log('MQTT connected');
+    mqttConnected = true;
     setConnectionState('connected');
+    connectionText.textContent = 'Connected — waiting for data';
     client.subscribe('smartcones/+/event');
     client.subscribe('smartcones/+/status');
     client.subscribe('smartcones/+/telemetry');
@@ -455,10 +482,12 @@
   });
 
   client.on('close', function () {
+    mqttConnected = false;
     setConnectionState('disconnected');
   });
 
   client.on('offline', function () {
+    mqttConnected = false;
     setConnectionState('disconnected');
   });
 
@@ -468,6 +497,8 @@
   });
 
   client.on('message', function (topic, message) {
+    lastMqttMessageTime = Date.now();
+
     let payload;
     try {
       payload = JSON.parse(message.toString());
