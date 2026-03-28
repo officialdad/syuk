@@ -608,6 +608,7 @@
           uptime_s: payload.uptime_s,
           free_heap: payload.free_heap,
           tilt_deg: payload.tilt_deg,
+          firmware: payload.firmware,
         };
       }
       // Update detail panel if showing this cone
@@ -657,6 +658,7 @@
     <div class="detail-row"><span class="detail-label">Uptime</span><span id="detail-uptime">--</span></div>
     <div class="detail-row"><span class="detail-label">Free Memory</span><span id="detail-heap">--</span></div>
     <div class="detail-row"><span class="detail-label">Current Tilt</span><span id="detail-tilt">--</span></div>
+    <div class="detail-row"><span class="detail-label">Firmware</span><span id="detail-firmware">--</span></div>
   `;
   // Insert before the "Recent Events" h4
   const recentEventsH4 = detailPanel.querySelector('.detail-panel-body h4');
@@ -668,11 +670,14 @@
   const removeDiv = document.createElement('div');
   removeDiv.style.cssText = 'margin-top:1.5rem;padding-top:1rem;border-top:1px solid #334155;';
   removeDiv.innerHTML = `
-    <button id="detail-remove-btn" class="btn" style="background:#ef4444;color:white;width:100%;padding:0.6rem;font-size:0.85rem;">
-      <i class="fa-solid fa-trash"></i> Remove Cone
-    </button>
-    <button id="detail-identify-btn" class="btn btn-outline" style="width:100%;padding:0.6rem;font-size:0.85rem;margin-top:0.5rem;">
+    <button id="detail-identify-btn" class="btn btn-outline" style="width:100%;padding:0.6rem;font-size:0.85rem;">
       <i class="fa-solid fa-eye"></i> Identify (Flash LED)
+    </button>
+    <button id="detail-ota-btn" class="btn btn-outline" style="width:100%;padding:0.6rem;font-size:0.85rem;margin-top:0.5rem;color:#a78bfa;border-color:#a78bfa;">
+      <i class="fa-solid fa-download"></i> Update Firmware
+    </button>
+    <button id="detail-remove-btn" class="btn" style="background:#ef4444;color:white;width:100%;padding:0.6rem;font-size:0.85rem;margin-top:0.5rem;">
+      <i class="fa-solid fa-trash"></i> Remove Cone
     </button>
   `;
   detailPanel.querySelector('.detail-panel-body').appendChild(removeDiv);
@@ -714,6 +719,27 @@
     }
   });
 
+  // OTA update handler
+  document.getElementById('detail-ota-btn').addEventListener('click', async () => {
+    const id = detailConeId.textContent;
+    if (!confirm(`Update firmware on ${id}? The cone will reboot after update.`)) return;
+
+    try {
+      const res = await fetch('/api/firmware/version');
+      const fw = await res.json();
+      if (!fw.url) {
+        alert('No firmware update available. Upload a new build first.');
+        return;
+      }
+      if (client && client.connected) {
+        client.publish(`smartcones/${id}/command`, JSON.stringify({ action: 'ota', url: fw.url }));
+        alert(`OTA update sent to ${id}. Watch the LED for progress.`);
+      }
+    } catch (err) {
+      console.error('Failed to get firmware version:', err);
+    }
+  });
+
   // Update telemetry fields when panel is visible
   setInterval(() => {
     if (detailPanel.classList.contains('hidden')) return;
@@ -743,6 +769,10 @@
     }
     if (tiltEl) {
       tiltEl.textContent = `${t.tilt_deg}°`;
+    }
+    const fwEl = document.getElementById('detail-firmware');
+    if (fwEl && t.firmware) {
+      fwEl.textContent = 'v' + t.firmware;
     }
   }, 1000);
 

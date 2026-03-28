@@ -59,7 +59,7 @@ void setup() {
   Serial.begin(115200);
   while (!Serial) delay(10);
 
-  Serial.println("\n=== Smart Cone v2.0 ===");
+  Serial.printf("\n=== Smart Cone %s ===\n", FIRMWARE_VERSION);
   Serial.println("Initializing...\n");
 
   // Init LED pins
@@ -114,6 +114,9 @@ void setup() {
   } else {
     Serial.println("Not fully connected — LED stays yellow");
   }
+
+  // Check for firmware updates at boot
+  checkFirmwareUpdate();
 
   Serial.println("\nSmart Cone ready!\n");
   Serial.println("Accel X(g) | Y(g)  | Z(g)  | Mag(g) | Tilt(°) | State");

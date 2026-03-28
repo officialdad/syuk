@@ -42,6 +42,10 @@
 #define INTRUSION_COOLDOWN_MS 15000
 #define PIR_WARMUP_MS 60000
 
+// --- Firmware Version & OTA ---
+#define FIRMWARE_VERSION "1.0.0"
+#define OTA_VERSION_URL DASHBOARD_API "/api/firmware/version"
+
 // --- Cone ID ---
 #define CONE_ID_PREFIX "cone-"
 #define AP_NAME_PREFIX "SmartCone-"

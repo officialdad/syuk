@@ -1,0 +1,71 @@
+name: Build & Release Firmware
+
+on:
+  push:
+    branches: [master]
+    paths: ['firmware/**']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Compile & Release Firmware
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install arduino-cli
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+          echo "$PWD/bin" >> $GITHUB_PATH
+
+      - name: Install ESP32 core & libraries
+        run: |
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32
+          arduino-cli lib install "Adafruit MPU6050" "Adafruit Unified Sensor" "WiFiManager" "PubSubClient" "ArduinoJson"
+
+      - name: Generate secrets.h
+        run: |
+          cat > firmware/smart_cone/secrets.h << 'SECRETS'
+          #ifndef SECRETS_H
+          #define SECRETS_H
+          #define MQTT_BROKER "${{ secrets.MQTT_BROKER }}"
+          #define MQTT_PORT 8883
+          #define MQTT_USER "${{ secrets.MQTT_USER }}"
+          #define MQTT_PASSWORD "${{ secrets.MQTT_PASSWORD }}"
+          #define NTFY_TOPIC "${{ secrets.NTFY_TOPIC }}"
+          #endif
+          SECRETS
+
+      - name: Compile firmware
+        run: |
+          arduino-cli compile --fqbn esp32:esp32:esp32 --output-dir ./build firmware/smart_cone/
+
+      - name: Get firmware version
+        id: version
+        run: |
+          VERSION=$(grep '#define FIRMWARE_VERSION' firmware/smart_cone/config.h | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Firmware version: $VERSION"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: firmware-v${{ steps.version.outputs.version }}
+          name: Firmware v${{ steps.version.outputs.version }}
+          files: |
+            build/smart_cone.ino.bin
+          body: |
+            Firmware build for Smart Cone v${{ steps.version.outputs.version }}
+
+            Flash via OTA or USB.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update dashboard firmware version
+        run: |
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/firmware-v${{ steps.version.outputs.version }}/smart_cone.ino.bin"
+          curl -X POST "https://kon.automasi.my/api/firmware/version" \
+            -H "Content-Type: application/json" \
+            -d "{\"version\":\"${{ steps.version.outputs.version }}\",\"url\":\"$DOWNLOAD_URL\"}"

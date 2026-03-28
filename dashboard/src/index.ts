@@ -154,6 +154,28 @@ app.get('/api/feed/cifs.json', async (c) => {
   return c.json({ incidents });
 });
 
+// GET /api/firmware/version — latest available firmware version
+app.get('/api/firmware/version', async (c) => {
+  // Firmware version is stored in KV, updated by GitHub Actions
+  const versionData = await c.env.CONE_LOCATIONS.get('firmware:latest', 'json');
+  if (versionData) {
+    return c.json(versionData);
+  }
+  // Default if not set yet
+  return c.json({ version: '1.0.0', url: '' });
+});
+
+// POST /api/firmware/version — update available firmware version (called by GitHub Actions)
+app.post('/api/firmware/version', async (c) => {
+  const body = await c.req.json();
+  const { version, url } = body;
+  if (!version) {
+    return c.json({ error: 'version required' }, 400);
+  }
+  await c.env.CONE_LOCATIONS.put('firmware:latest', JSON.stringify({ version, url, updated_at: new Date().toISOString() }));
+  return c.json({ version, url }, 201);
+});
+
 app.get('/api/version', (c) => {
   return c.json({ version: '1.0.8-rc.1' });
 });

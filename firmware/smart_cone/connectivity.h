@@ -6,6 +6,7 @@
 #include <PubSubClient.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <HTTPUpdate.h>
 #include <Preferences.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -32,6 +33,11 @@ struct EventMessage {
 
 QueueHandle_t eventQueue = NULL;
 TaskHandle_t networkTaskHandle = NULL;
+
+// Forward declarations
+void performOTA(const char* url);
+void otaLedSignal(const char* stage);
+void checkFirmwareUpdate();
 
 bool setupWiFi() {
   // Load or generate Cone ID
@@ -123,6 +129,15 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       digitalWrite(LED_RED_PIN, LOW); digitalWrite(LED_GREEN_PIN, HIGH); digitalWrite(LED_BLUE_PIN, LOW); // green
     } else {
       digitalWrite(LED_RED_PIN, LOW); digitalWrite(LED_GREEN_PIN, LOW); digitalWrite(LED_BLUE_PIN, HIGH); // blue
+    }
+  } else if (strcmp(action, "ota") == 0) {
+    const char* url = doc["url"];
+    if (url) {
+      // Only allow OTA in UPRIGHT state (safety check)
+      Serial.println("MQTT: OTA command received");
+      performOTA(url);
+    } else {
+      Serial.println("MQTT: OTA command missing URL");
     }
   }
 }
@@ -294,6 +309,110 @@ bool publishEventNoNtfy(const char* event, float accelG, float tiltDeg, unsigned
   return false;
 }
 
+// --- OTA LED Signals ---
+void otaLedSignal(const char* stage) {
+  if (strcmp(stage, "available") == 0) {
+    // Cyan blink 3x (update available at boot)
+    for (int i = 0; i < 3; i++) {
+      digitalWrite(LED_RED_PIN, LOW); digitalWrite(LED_GREEN_PIN, HIGH); digitalWrite(LED_BLUE_PIN, HIGH);
+      delay(1000);
+      digitalWrite(LED_RED_PIN, LOW); digitalWrite(LED_GREEN_PIN, LOW); digitalWrite(LED_BLUE_PIN, LOW);
+      delay(500);
+    }
+  } else if (strcmp(stage, "downloading") == 0) {
+    // Purple pulse once
+    digitalWrite(LED_RED_PIN, HIGH); digitalWrite(LED_GREEN_PIN, LOW); digitalWrite(LED_BLUE_PIN, HIGH);
+  } else if (strcmp(stage, "flashing") == 0) {
+    // Rapid purple blink
+    for (int i = 0; i < 10; i++) {
+      digitalWrite(LED_RED_PIN, HIGH); digitalWrite(LED_GREEN_PIN, LOW); digitalWrite(LED_BLUE_PIN, HIGH);
+      delay(200);
+      digitalWrite(LED_RED_PIN, LOW); digitalWrite(LED_GREEN_PIN, LOW); digitalWrite(LED_BLUE_PIN, LOW);
+      delay(200);
+    }
+  } else if (strcmp(stage, "success") == 0) {
+    // Green blink 3x
+    for (int i = 0; i < 3; i++) {
+      digitalWrite(LED_RED_PIN, LOW); digitalWrite(LED_GREEN_PIN, HIGH); digitalWrite(LED_BLUE_PIN, LOW);
+      delay(500);
+      digitalWrite(LED_RED_PIN, LOW); digitalWrite(LED_GREEN_PIN, LOW); digitalWrite(LED_BLUE_PIN, LOW);
+      delay(300);
+    }
+  } else if (strcmp(stage, "failed") == 0) {
+    // Red rapid blink 5x
+    for (int i = 0; i < 5; i++) {
+      digitalWrite(LED_RED_PIN, HIGH); digitalWrite(LED_GREEN_PIN, LOW); digitalWrite(LED_BLUE_PIN, LOW);
+      delay(200);
+      digitalWrite(LED_RED_PIN, LOW); digitalWrite(LED_GREEN_PIN, LOW); digitalWrite(LED_BLUE_PIN, LOW);
+      delay(200);
+    }
+  }
+}
+
+// Check for firmware update at boot (non-blocking, single check)
+void checkFirmwareUpdate() {
+  if (WiFi.status() != WL_CONNECTED) return;
+
+  Serial.printf("OTA: Checking for updates (current: %s)...\n", FIRMWARE_VERSION);
+
+  WiFiClientSecure otaClient;
+  otaClient.setInsecure();
+  HTTPClient http;
+  http.setTimeout(5000);
+  http.begin(otaClient, OTA_VERSION_URL);
+  int code = http.GET();
+
+  if (code == 200) {
+    String body = http.getString();
+    JsonDocument doc;
+    if (!deserializeJson(doc, body)) {
+      const char* serverVersion = doc["version"];
+      if (serverVersion && strcmp(serverVersion, FIRMWARE_VERSION) != 0) {
+        Serial.printf("OTA: Update available! Server: %s, Current: %s\n", serverVersion, FIRMWARE_VERSION);
+        otaLedSignal("available");
+      } else {
+        Serial.println("OTA: Firmware is up to date");
+      }
+    }
+  } else {
+    Serial.printf("OTA: Version check failed (%d)\n", code);
+  }
+  http.end();
+}
+
+// Perform OTA update from URL
+void performOTA(const char* url) {
+  Serial.printf("OTA: Starting update from %s\n", url);
+  otaLedSignal("downloading");
+
+  // Disable buzzer during OTA
+  digitalWrite(BUZZER_PIN, LOW);
+
+  WiFiClientSecure otaClient;
+  otaClient.setInsecure();
+
+  httpUpdate.setLedPin(-1); // We handle LED ourselves
+
+  t_httpUpdate_return ret = httpUpdate.update(otaClient, url);
+
+  switch (ret) {
+    case HTTP_UPDATE_FAILED:
+      Serial.printf("OTA: Failed (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
+      otaLedSignal("failed");
+      break;
+    case HTTP_UPDATE_NO_UPDATES:
+      Serial.println("OTA: No update available");
+      otaLedSignal("failed");
+      break;
+    case HTTP_UPDATE_OK:
+      Serial.println("OTA: Success! Rebooting...");
+      otaLedSignal("success");
+      delay(1000);
+      ESP.restart();
+      break;
+  }
+}
+
 void setupNetworkTask() {
   eventQueue = xQueueCreate(10, sizeof(EventMessage));
   if (eventQueue == NULL) {
@@ -314,6 +433,7 @@ void publishTelemetry(float tiltDeg) {
   doc["uptime_s"] = millis() / 1000;
   doc["free_heap"] = ESP.getFreeHeap();
   doc["tilt_deg"] = round(tiltDeg * 10) / 10.0;
+  doc["firmware"] = FIRMWARE_VERSION;
 
   char payload[256];
   serializeJson(doc, payload, sizeof(payload));
