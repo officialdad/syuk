@@ -4,6 +4,7 @@ on:
   push:
     branches: [master]
     paths: ['firmware/**']
+  workflow_dispatch:
 
 jobs:
   build:
