@@ -286,10 +286,18 @@
 
   // --- Setup Mode ---
   btnSetupMode.addEventListener('click', () => {
-    setupMode = !setupMode;
-    btnSetupMode.classList.toggle('active', setupMode);
-    btnSetupMode.innerHTML = setupMode ? '<i class="fa-solid fa-xmark"></i> Close' : '<i class="fa-solid fa-circle-info"></i> Setup Instructions';
-    setupPanel.classList.toggle('hidden', !setupMode);
+    const overlay = document.getElementById('setup-overlay');
+    if (overlay) overlay.classList.remove('hidden');
+  });
+
+  // Close setup panel when cone is placed
+  btnPlaceCone.addEventListener('click', () => {
+    // Panel will be hidden after successful placement
+    setTimeout(() => {
+      if (gpsStatus.textContent.includes('successfully')) {
+        setupPanel.classList.add('hidden');
+      }
+    }, 1000);
   });
 
   btnPlaceCone.addEventListener('click', () => {
@@ -540,13 +548,8 @@
           `${eventConeId} is online but not placed on the map.`,
           'Place Now',
           () => {
-            // Enable setup mode and pre-fill cone ID
-            if (!setupMode) {
-              setupMode = true;
-              btnSetupMode.classList.add('active');
-              btnSetupMode.innerHTML = '<i class="fa-solid fa-xmark"></i> Close';
-              setupPanel.classList.toggle('hidden', false);
-            }
+            // Show placement form for this specific cone
+            setupPanel.classList.remove('hidden');
             newConeIdInput.value = eventConeId;
             newConeIdInput.disabled = true; // Lock the ID since it's from MQTT
             // Re-enable after placement
@@ -596,12 +599,8 @@
           `${statusConeId} is online but not placed on the map.`,
           'Place Now',
           () => {
-            if (!setupMode) {
-              setupMode = true;
-              btnSetupMode.classList.add('active');
-              btnSetupMode.innerHTML = '<i class="fa-solid fa-xmark"></i> Close';
-              setupPanel.classList.toggle('hidden', false);
-            }
+            // Show placement form for this specific cone
+            setupPanel.classList.remove('hidden');
             newConeIdInput.value = statusConeId;
           }
         );
@@ -677,6 +676,37 @@
     });
 
     detailPanel.classList.remove('hidden');
+
+    // Check firmware update availability
+    const fwStatusText = document.getElementById('fw-status-text');
+    const otaBtn = document.getElementById('detail-ota-btn');
+    if (fwStatusText && otaBtn) {
+      const coneFw = cone.telemetry && cone.telemetry.firmware;
+      if (!coneFw) {
+        fwStatusText.textContent = 'Firmware version unknown';
+        fwStatusText.style.color = '#64748b';
+        otaBtn.style.display = 'none';
+      } else {
+        fwStatusText.textContent = `Checking firmware v${coneFw}...`;
+        fwStatusText.style.color = '#64748b';
+        fetch('/api/firmware/version').then(r => r.json()).then(fw => {
+          if (fw.version && fw.version !== coneFw && fw.url) {
+            fwStatusText.innerHTML = `<i class="fa-solid fa-circle-up" style="color:#22c55e;"></i> Update available: <strong>v${coneFw}</strong> → <strong>v${fw.version}</strong>`;
+            fwStatusText.style.color = '#e2e8f0';
+            otaBtn.style.display = 'block';
+            otaBtn.innerHTML = `<i class="fa-solid fa-download"></i> Update to v${fw.version}`;
+          } else {
+            fwStatusText.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#64748b;"></i> Firmware up to date <strong>v${coneFw}</strong>`;
+            fwStatusText.style.color = '#64748b';
+            otaBtn.style.display = 'none';
+          }
+        }).catch(() => {
+          fwStatusText.textContent = `Firmware v${coneFw}`;
+          fwStatusText.style.color = '#64748b';
+          otaBtn.style.display = 'none';
+        });
+      }
+    }
   }
 
   detailClose.addEventListener('click', () => {
@@ -707,7 +737,10 @@
     <button id="detail-identify-btn" class="btn btn-outline" style="width:100%;padding:0.6rem;font-size:0.85rem;">
       <i class="fa-solid fa-eye"></i> Identify (Flash LED)
     </button>
-    <button id="detail-ota-btn" class="btn btn-outline" style="width:100%;padding:0.6rem;font-size:0.85rem;margin-top:0.5rem;color:#a78bfa;border-color:#a78bfa;">
+    <div id="detail-fw-status" style="margin-top:0.75rem;padding:0.5rem 0.75rem;border-radius:0.5rem;font-size:0.8rem;text-align:center;background:#0f172a;border:1px solid #334155;">
+      <span id="fw-status-text" style="color:#64748b;">Checking firmware...</span>
+    </div>
+    <button id="detail-ota-btn" class="btn btn-outline" style="width:100%;padding:0.6rem;font-size:0.85rem;margin-top:0.5rem;color:#a78bfa;border-color:#a78bfa;display:none;">
       <i class="fa-solid fa-download"></i> Update Firmware
     </button>
     <button id="detail-remove-btn" class="btn" style="background:#ef4444;color:white;width:100%;padding:0.6rem;font-size:0.85rem;margin-top:0.5rem;">
@@ -883,7 +916,10 @@
         updateStats();
         renderFleetList(); // Re-render list
       });
-      row.append(name, location, badge, removeBtn);
+      const chevron = document.createElement('span');
+      chevron.className = 'fleet-list-chevron';
+      chevron.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+      row.append(name, location, badge, removeBtn, chevron);
       row.addEventListener('click', () => {
         if (cone.marker) map.setView(cone.marker.getLatLng(), 17);
         showConeDetail(id);

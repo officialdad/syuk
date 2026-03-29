@@ -518,7 +518,18 @@ h2 i {
 }
 
 .fleet-list-row:hover {
-  background: #334155;
+  background: #1e293b;
+}
+
+.fleet-list-row:active {
+  background: #253349;
+}
+
+.fleet-list-chevron {
+  color: #475569;
+  font-size: 0.75rem;
+  margin-left: auto;
+  padding-left: 0.5rem;
 }
 
 .fleet-list-row .cone-name {
