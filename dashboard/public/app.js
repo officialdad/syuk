@@ -104,6 +104,7 @@
     if (!online) return grayIcon;
     if (state === 'KNOCKED_OVER') return redIcon;
     if (state === 'IMPACT_ALERT') return orangeIcon;
+    if (state === 'DISTURBED') return orangeIcon;
     if (state === 'INTRUSION') return blueIcon;
     return greenIcon;
   }
@@ -203,7 +204,7 @@
   }
 
   // --- Cone Status Card ---
-  const STATE_MAP = { UPRIGHT: 'upright', IMPACT_ALERT: 'impact_alert', KNOCKED_OVER: 'knocked_over', INTRUSION: 'intrusion' };
+  const STATE_MAP = { UPRIGHT: 'upright', IMPACT_ALERT: 'impact_alert', DISTURBED: 'disturbed', KNOCKED_OVER: 'knocked_over', INTRUSION: 'intrusion' };
 
   function updateConeStatus(state, id, timestamp) {
     const cls = STATE_MAP[state] || 'upright';
@@ -222,6 +223,7 @@
     if (event === 'impact') return 'IMPACT_ALERT';
     if (event === 'knockover') return 'KNOCKED_OVER';
     if (event === 'recovery') return 'UPRIGHT';
+    if (event === 'disturbed') return 'DISTURBED';
     if (event === 'intrusion') return 'INTRUSION';
     return null;
   }
@@ -250,10 +252,11 @@
     const tdEvent = document.createElement('td');
     tdEvent.setAttribute('data-label', 'Event');
     const badge = document.createElement('span');
-    badge.className = 'event-badge ' + (eventType === 'impact' ? 'impact' : eventType === 'knockover' ? 'knocked_over' : eventType === 'recovery' ? 'recovery' : eventType === 'intrusion' ? 'intrusion' : 'default');
+    badge.className = 'event-badge ' + (eventType === 'impact' ? 'impact' : eventType === 'knockover' ? 'knocked_over' : eventType === 'disturbed' ? 'disturbed' : eventType === 'recovery' ? 'recovery' : eventType === 'intrusion' ? 'intrusion' : 'default');
     let badgeIcon = '';
     if (eventType === 'impact') badgeIcon = '<i class="fa-solid fa-bolt"></i> ';
     else if (eventType === 'knockover') badgeIcon = '<i class="fa-solid fa-triangle-exclamation"></i> ';
+    else if (eventType === 'disturbed') badgeIcon = '<i class="fa-solid fa-hand"></i> ';
     else if (eventType === 'recovery') badgeIcon = '<i class="fa-solid fa-check"></i> ';
     else if (eventType === 'intrusion') badgeIcon = '<i class="fa-solid fa-person-walking"></i> ';
     badge.innerHTML = badgeIcon + eventType;
@@ -584,6 +587,16 @@
               updateMarker(eventConeId);
             }
           }, 5000);
+        }
+
+        // Auto-reset disturbed state after 10 seconds
+        if (derivedState === 'DISTURBED') {
+          setTimeout(() => {
+            if (coneStates[eventConeId] && coneStates[eventConeId].state === 'DISTURBED') {
+              coneStates[eventConeId].state = 'UPRIGHT';
+              updateMarker(eventConeId);
+            }
+          }, 10000);
         }
       }
 

@@ -11,6 +11,7 @@ Adafruit_NeoPixel matrix(MATRIX_NUM_LEDS, MATRIX_PIN, NEO_GRB + NEO_KHZ800);
 enum ConeState {
   UPRIGHT,
   IMPACT_ALERT,
+  DISTURBED,
   KNOCKED_OVER
 };
 
@@ -51,6 +52,7 @@ const char* stateToString(ConeState s) {
   switch (s) {
     case UPRIGHT:      return "UPRIGHT";
     case IMPACT_ALERT: return "IMPACT_ALERT";
+    case DISTURBED:    return "DISTURBED";
     case KNOCKED_OVER: return "KNOCKED_OVER";
     default:           return "UNKNOWN";
   }
@@ -95,6 +97,17 @@ void updateMatrix(ConeState s, bool connected) {
       matrix.clear();
       matrix.show();
       break;
+    case DISTURBED: {
+      // Amber pulse
+      bool pulseOn = ((now / 800) % 2) == 0;
+      if (pulseOn) {
+        matrix.fill(matrix.Color(255, 150, 0)); // Amber
+      } else {
+        matrix.clear();
+      }
+      matrix.show();
+      break;
+    }
     case KNOCKED_OVER: {
       // Red flash synced with buzzer (500ms on/off)
       bool flashOn = ((now / 500) % 2) == 0;
@@ -227,7 +240,7 @@ void loop() {
                 ax, ay, az, magnitude, tiltDeg, stateToString(state));
 
   // Auto-off buzzer after duration (only for IMPACT_ALERT, not KNOCKED_OVER)
-  if (buzzerActive && state != KNOCKED_OVER && (millis() - buzzerStartTime >= BUZZER_DURATION_MS)) {
+  if (buzzerActive && state != KNOCKED_OVER && state != DISTURBED && (millis() - buzzerStartTime >= BUZZER_DURATION_MS)) {
     buzzerOff();
   }
 
@@ -254,7 +267,7 @@ void loop() {
         buzzerOn();
         publishEvent("impact", magnitude, tiltDeg);
       }
-      // Check for tilt (start of potential knockover)
+      // Check for tilt — knockover (high) or disturbed (moderate)
       else if (tiltDeg > TILT_THRESHOLD_DEG) {
         if (!tiltTimerRunning) {
           tiltTimerRunning = true;
@@ -264,16 +277,54 @@ void loop() {
           knockoverStartTime = millis();
           state = KNOCKED_OVER;
           setLED(true, false); // Red
-          // Start buzzer immediately
           digitalWrite(BUZZER_PIN, HIGH);
           buzzerActive = true;
           buzzerStartTime = millis();
-          // Network calls (non-blocking, queued to core 0)
           publishEvent("knockover", magnitude, tiltDeg);
           tiltTimerRunning = false;
         }
+      }
+      else if (tiltDeg > DISTURBED_THRESHOLD) {
+        Serial.println("\n*** CONE DISTURBED ***\n");
+        state = DISTURBED;
+        setLED(true, true, false); // Yellow
+        // Single short beep
+        digitalWrite(BUZZER_PIN, HIGH);
+        delay(200);
+        digitalWrite(BUZZER_PIN, LOW);
+        publishEvent("disturbed", magnitude, tiltDeg);
+        tiltTimerRunning = false;
       } else {
-        tiltTimerRunning = false; // Reset if tilt goes back below threshold
+        tiltTimerRunning = false;
+      }
+      break;
+
+    case DISTURBED:
+      // Check for escalation to knockover
+      if (tiltDeg > TILT_THRESHOLD_DEG) {
+        if (!tiltTimerRunning) {
+          tiltTimerRunning = true;
+          tiltStartTime = millis();
+        } else if (millis() - tiltStartTime >= TILT_SUSTAIN_MS) {
+          Serial.println("\n*** KNOCKED OVER (from disturbed)! ***\n");
+          knockoverStartTime = millis();
+          state = KNOCKED_OVER;
+          setLED(true, false); // Red
+          digitalWrite(BUZZER_PIN, HIGH);
+          buzzerActive = true;
+          buzzerStartTime = millis();
+          publishEvent("knockover", magnitude, tiltDeg);
+          tiltTimerRunning = false;
+        }
+      }
+      // Check for recovery back to upright
+      else if (tiltDeg < TILT_RECOVERY_DEG) {
+        Serial.println("\n--- Cone settled, back upright ---\n");
+        publishEventNoNtfy("recovery", magnitude, tiltDeg);
+        state = UPRIGHT;
+        tiltTimerRunning = false;
+      } else {
+        tiltTimerRunning = false;
       }
       break;
 
@@ -309,8 +360,8 @@ void loop() {
       break;
   }
 
-  // --- Intrusion Detection (PIR) ---
-  if (millis() - pirWarmupStart >= PIR_WARMUP_MS) {
+  // --- Intrusion Detection (PIR) — only when UPRIGHT ---
+  if (state == UPRIGHT && millis() - pirWarmupStart >= PIR_WARMUP_MS) {
     if (digitalRead(PIR_PIN) == HIGH) {
       unsigned long now = millis();
       if (now - lastIntrusionTime >= INTRUSION_COOLDOWN_MS) {
