@@ -61,8 +61,12 @@ bool setupWiFi() {
   WiFiManagerParameter coneIdParam("cone_id", "Cone ID (e.g. cone-002)", dynamicConeId, CONE_ID_MAX_LEN);
   wm.addParameter(&coneIdParam);
 
-  // Dynamic AP name based on Cone ID (always uses ID, never "Setup")
-  String apName = String(AP_NAME_PREFIX) + String(dynamicConeId);
+  // Dynamic AP name: Smart-Cone-xxxx (MAC suffix only, no "cone-" duplication)
+  uint8_t apMac[6];
+  WiFi.macAddress(apMac);
+  char macSuffix[5];
+  snprintf(macSuffix, sizeof(macSuffix), "%02x%02x", apMac[4], apMac[5]);
+  String apName = String(AP_NAME_PREFIX) + String(macSuffix);
 
   Serial.printf("WiFi: AP name: %s\n", apName.c_str());
   Serial.printf("WiFi: Current Cone ID: %s\n", dynamicConeId);

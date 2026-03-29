@@ -57,7 +57,7 @@
 
 // --- Cone ID ---
 #define CONE_ID_PREFIX "cone-"
-#define AP_NAME_PREFIX "SmartCone-"
+#define AP_NAME_PREFIX "Smart-Cone-"
 #define CONE_ID_MAX_LEN 32
 
 #endif

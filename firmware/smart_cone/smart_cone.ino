@@ -56,30 +56,57 @@ const char* stateToString(ConeState s) {
   }
 }
 
-// --- LED Matrix display ---
+// --- LED Matrix display (non-blocking animations) ---
+bool intrusionFlashing = false;
+unsigned long intrusionFlashStart = 0;
+
 void updateMatrix(ConeState s, bool connected) {
-  static ConeState lastState = (ConeState)-1;
-  static bool lastConnected = false;
-  if (s == lastState && connected == lastConnected) return; // Skip if no change
-  lastState = s;
-  lastConnected = connected;
+  unsigned long now = millis();
+
+  // Intrusion flash: blue/white chase for 3 seconds
+  if (intrusionFlashing) {
+    if (now - intrusionFlashStart >= 3000) {
+      intrusionFlashing = false;
+      matrix.clear();
+      matrix.show();
+      return;
+    }
+    unsigned long phase = (now / 150) % MATRIX_NUM_LEDS;
+    for (int i = 0; i < MATRIX_NUM_LEDS; i++) {
+      if (i == (int)phase || i == (int)((phase + 4) % MATRIX_NUM_LEDS) ||
+          i == (int)((phase + 8) % MATRIX_NUM_LEDS) || i == (int)((phase + 12) % MATRIX_NUM_LEDS)) {
+        matrix.setPixelColor(i, matrix.Color(255, 255, 255)); // White
+      } else {
+        matrix.setPixelColor(i, matrix.Color(0, 0, 80)); // Blue
+      }
+    }
+    matrix.show();
+    return;
+  }
 
   switch (s) {
     case UPRIGHT:
-      if (connected) {
-        matrix.fill(matrix.Color(0, 30, 0)); // Green
-      } else {
-        matrix.fill(matrix.Color(0, 0, 30)); // Blue
-      }
+      // Idle = off (save power)
+      matrix.clear();
+      matrix.show();
       break;
     case IMPACT_ALERT:
-      matrix.fill(matrix.Color(30, 20, 0)); // Yellow/amber
+      // Red flash once then off — handled by state transition
+      matrix.clear();
+      matrix.show();
       break;
-    case KNOCKED_OVER:
-      matrix.fill(matrix.Color(30, 0, 0)); // Red
+    case KNOCKED_OVER: {
+      // Red flash synced with buzzer (500ms on/off)
+      bool flashOn = ((now / 500) % 2) == 0;
+      if (flashOn) {
+        matrix.fill(matrix.Color(255, 0, 0)); // Red
+      } else {
+        matrix.clear();
+      }
+      matrix.show();
       break;
+    }
   }
-  matrix.show();
 }
 
 // --- Setup ---
@@ -95,7 +122,17 @@ void setup() {
   pinMode(LED_RED_PIN, OUTPUT);
   pinMode(LED_GREEN_PIN, OUTPUT);
   pinMode(LED_BLUE_PIN, OUTPUT);
-  setLED(false, false, true); // Blue = initializing
+  // Check if this is a user-initiated WiFi reset
+  preferences.begin("smartcone", false);
+  bool wasReset = preferences.getBool("wifi_reset", false);
+  if (wasReset) {
+    preferences.putBool("wifi_reset", false); // Clear flag
+    setLED(true, true, false); // Yellow = WiFi reset mode
+    Serial.println("WiFi reset mode (yellow LED)");
+  } else {
+    setLED(false, false, true); // Blue = fresh setup / initializing
+  }
+  preferences.end();
 
   // WiFi reset button
   pinMode(WIFI_RESET_PIN, INPUT);
@@ -296,6 +333,9 @@ void loop() {
           digitalWrite(BUZZER_PIN, LOW);
           delay(100);
         }
+        // Trigger matrix intrusion animation
+        intrusionFlashing = true;
+        intrusionFlashStart = millis();
         publishEvent("intrusion", magnitude, tiltDeg);
       }
     }
@@ -311,6 +351,10 @@ void loop() {
       setLED(true, true, false); // Yellow = holding
     } else if (millis() - btnHoldStart >= WIFI_RESET_HOLD_MS) {
       Serial.println("WiFi credentials cleared! Rebooting into portal...");
+      // Mark as user-initiated reset
+      preferences.begin("smartcone", false);
+      preferences.putBool("wifi_reset", true);
+      preferences.end();
       for (int i = 0; i < 3; i++) {
         setLED(true, true, false); delay(300);
         setLED(false, false, false); delay(200);
