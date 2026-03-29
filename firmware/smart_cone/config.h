@@ -52,7 +52,7 @@
 #define WIFI_RESET_HOLD_MS 3000  // Hold 3s to reset WiFi
 
 // --- Firmware Version & OTA ---
-#define FIRMWARE_VERSION "1.0.0"
+#define FIRMWARE_VERSION "1.1.0"
 #define OTA_VERSION_URL DASHBOARD_API "/api/firmware/version"
 
 // --- Cone ID ---
