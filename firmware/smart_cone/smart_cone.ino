@@ -29,6 +29,10 @@ unsigned long knockoverStartTime = 0;
 unsigned long lastIntrusionTime = 0;
 unsigned long pirWarmupStart = 0;
 
+// Resting orientation (calibrated at boot)
+float restAx = 0, restAy = 0, restAz = 1.0; // Default: flat
+bool calibrated = false;
+
 // --- Helper Functions ---
 
 void setLED(bool red, bool green, bool blue = false) {
@@ -197,9 +201,30 @@ void setup() {
   // Check for firmware updates at boot
   checkFirmwareUpdate();
 
+  // Calibrate resting orientation (average 20 samples)
+  Serial.println("Calibrating resting orientation...");
+  float sumAx = 0, sumAy = 0, sumAz = 0;
+  for (int i = 0; i < 20; i++) {
+    sensors_event_t a, g, t;
+    mpu.getEvent(&a, &g, &t);
+    sumAx += a.acceleration.x / 9.81;
+    sumAy += a.acceleration.y / 9.81;
+    sumAz += a.acceleration.z / 9.81;
+    delay(50);
+  }
+  restAx = sumAx / 20.0;
+  restAy = sumAy / 20.0;
+  restAz = sumAz / 20.0;
+  float restMag = sqrt(restAx * restAx + restAy * restAy + restAz * restAz);
+  restAx /= restMag;
+  restAy /= restMag;
+  restAz /= restMag;
+  calibrated = true;
+  Serial.printf("Resting orientation: (%.2f, %.2f, %.2f)\n", restAx, restAy, restAz);
+
   Serial.println("\nSmart Cone ready!\n");
-  Serial.println("Accel X(g) | Y(g)  | Z(g)  | Mag(g) | Tilt(°) | State");
-  Serial.println("---------- | ----- | ----- | ------ | ------- | -----");
+  Serial.println("Accel X(g) | Y(g)  | Z(g)  | Mag(g) | Dev(°) | State");
+  Serial.println("---------- | ----- | ----- | ------ | ------ | -----");
 }
 
 // --- Main Loop ---
@@ -225,10 +250,14 @@ void loop() {
   float ay = accel.acceleration.y / 9.81;
   float az = accel.acceleration.z / 9.81;
 
-  // Calculate magnitude and tilt
+  // Calculate magnitude and deviation from resting orientation
   float magnitude = sqrt(ax * ax + ay * ay + az * az);
-  float tiltDeg = acos(constrain(az / magnitude, -1.0, 1.0)) * 180.0 / PI;
-  float tiltDev = abs(tiltDeg - CONE_RESTING_TILT); // Deviation from resting position
+  // Normalize current reading
+  float nax = ax / magnitude, nay = ay / magnitude, naz = az / magnitude;
+  // Dot product with resting orientation = cos(angle between them)
+  float dotProduct = nax * restAx + nay * restAy + naz * restAz;
+  float tiltDev = acos(constrain(dotProduct, -1.0, 1.0)) * 180.0 / PI;
+  float tiltDeg = tiltDev; // For display/logging compatibility
 
   // Publish telemetry periodically
   if (mqttClient.connected() && (millis() - lastTelemetryTime >= TELEMETRY_INTERVAL_MS)) {
@@ -237,8 +266,8 @@ void loop() {
   }
 
   // Print readings
-  Serial.printf("%10.2f | %5.2f | %5.2f | %6.2f | %7.1f | %s\n",
-                ax, ay, az, magnitude, tiltDeg, stateToString(state));
+  Serial.printf("%10.2f | %5.2f | %5.2f | %6.2f | %6.1f | %s\n",
+                ax, ay, az, magnitude, tiltDev, stateToString(state));
 
   // Auto-off buzzer after duration (only for IMPACT_ALERT, not KNOCKED_OVER)
   if (buzzerActive && state != KNOCKED_OVER && state != DISTURBED && (millis() - buzzerStartTime >= BUZZER_DURATION_MS)) {

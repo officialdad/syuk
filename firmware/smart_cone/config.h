@@ -18,10 +18,10 @@
 // --- Detection Thresholds ---
 
 #define IMPACT_THRESHOLD_G   3.0   // Acceleration magnitude to trigger impact (in g)
-#define CONE_RESTING_TILT    76.0  // Resting tilt when mounted inside cone (degrees)
-#define DISTURBED_DEV        3.0   // Disturbed: 3° deviation from resting (either direction)
-#define KNOCKOVER_DEV        10.0  // Knockover: 10° deviation from resting (either direction)
-#define RECOVERY_DEV         2.0   // Recovery: within 2° of resting
+// Orientation auto-calibrated at boot — thresholds are deviation from resting
+#define DISTURBED_DEV        5.0   // Disturbed: 5° deviation from resting
+#define KNOCKOVER_DEV        15.0  // Knockover: 15° deviation from resting
+#define RECOVERY_DEV         3.0   // Recovery: within 3° of resting
 #define TILT_SUSTAIN_MS      1000  // How long tilt must hold before knockover triggers (ms)
 #define ALERT_COOLDOWN_MS    10000 // Cooldown between alerts to prevent spam (ms)
 #define BUZZER_DURATION_MS   2000  // How long buzzer beeps on alert (ms)
