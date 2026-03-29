@@ -104,6 +104,7 @@
     if (!online) return grayIcon;
     if (state === 'KNOCKED_OVER') return redIcon;
     if (state === 'IMPACT_ALERT') return orangeIcon;
+    if (state === 'INTRUSION') return blueIcon;
     return greenIcon;
   }
 
@@ -121,6 +122,14 @@
   const redIcon = createIcon('#ef4444');
   const orangeIcon = createIcon('#f59e0b');
   const grayIcon = createIcon('#6b7280');
+  const blueIcon = createIcon('#3b82f6');
+
+  const simIcon = L.divIcon({
+    className: 'cone-marker sim-marker',
+    html: `<div style="background:#6b7280;width:16px;height:16px;border-radius:3px;border:2px dashed white;box-shadow:0 2px 6px rgba(0,0,0,0.3);opacity:0.7;"></div>`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+  });
 
   // --- Load existing cones from API ---
   async function loadCones() {
@@ -128,7 +137,9 @@
       const res = await fetch('/api/cones');
       const cones = await res.json();
       cones.forEach(cone => {
-        addConeToMap(cone.cone_id, cone.lat, cone.lng, cone.label);
+        if (!cone.cone_id.startsWith('sim-')) {
+          addConeToMap(cone.cone_id, cone.lat, cone.lng, cone.label);
+        }
       });
       updateStats();
       if (cones.length > 0) {
@@ -153,6 +164,13 @@
   function updateMarker(id) {
     const cone = coneStates[id];
     if (!cone || !cone.marker) return;
+    if (cone.simulated) {
+      // Sim cones keep their distinct icon
+      cone.marker.setPopupContent(
+        `<strong>[SIM] ${id}</strong><br>${cone.label || ''}<br>State: ${cone.state}`
+      );
+      return;
+    }
     cone.marker.setIcon(markerIcon(cone.state, cone.online));
     cone.marker.setPopupContent(
       `<strong>${id}</strong><br>${cone.label || ''}<br>State: ${cone.state}<br>${cone.online ? '🟢 Online' : '⚫ Offline'}`
@@ -185,7 +203,7 @@
   }
 
   // --- Cone Status Card ---
-  const STATE_MAP = { UPRIGHT: 'upright', IMPACT_ALERT: 'impact_alert', KNOCKED_OVER: 'knocked_over' };
+  const STATE_MAP = { UPRIGHT: 'upright', IMPACT_ALERT: 'impact_alert', KNOCKED_OVER: 'knocked_over', INTRUSION: 'intrusion' };
 
   function updateConeStatus(state, id, timestamp) {
     const cls = STATE_MAP[state] || 'upright';
@@ -204,6 +222,7 @@
     if (event === 'impact') return 'IMPACT_ALERT';
     if (event === 'knockover') return 'KNOCKED_OVER';
     if (event === 'recovery') return 'UPRIGHT';
+    if (event === 'intrusion') return 'INTRUSION';
     return null;
   }
 
@@ -269,7 +288,7 @@
   btnSetupMode.addEventListener('click', () => {
     setupMode = !setupMode;
     btnSetupMode.classList.toggle('active', setupMode);
-    btnSetupMode.innerHTML = setupMode ? '<i class="fa-solid fa-xmark"></i> Exit Setup' : '<i class="fa-solid fa-gear"></i> Setup Mode';
+    btnSetupMode.innerHTML = setupMode ? '<i class="fa-solid fa-xmark"></i> Close' : '<i class="fa-solid fa-circle-info"></i> Setup Instructions';
     setupPanel.classList.toggle('hidden', !setupMode);
   });
 
@@ -329,6 +348,14 @@
       simulatorRunning = false;
       btnSimulator.innerHTML = '<i class="fa-solid fa-play"></i> Start Simulator';
       btnSimulator.classList.remove('active');
+      // Remove sim cones from map
+      Object.keys(coneStates).forEach(id => {
+        if (id.startsWith('sim-')) {
+          if (coneStates[id].marker) map.removeLayer(coneStates[id].marker);
+          delete coneStates[id];
+        }
+      });
+      updateStats();
       return;
     }
 
@@ -347,20 +374,11 @@
 
     // Place simulated cones on map via API
     for (const sim of simCones) {
-      try {
-        await fetch('/api/cones', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(sim),
-        });
-        addConeToMap(sim.cone_id, sim.lat, sim.lng, sim.label);
-        // Set them online
-        coneStates[sim.cone_id].online = true;
-        updateMarker(sim.cone_id);
-        attachMarkerClick(sim.cone_id);
-      } catch (err) {
-        console.error('Failed to place sim cone:', err);
-      }
+      // Sim cones are in-memory only — not persisted to KV
+      const marker = L.marker([sim.lat, sim.lng], { icon: simIcon }).addTo(map);
+      marker.bindPopup(`<strong>[SIM] ${sim.cone_id}</strong><br>${sim.label || ''}<br>State: UPRIGHT`);
+      coneStates[sim.cone_id] = { state: 'UPRIGHT', online: true, marker, lat: sim.lat, lng: sim.lng, label: sim.label, simulated: true };
+      attachMarkerClick(sim.cone_id);
     }
     updateStats();
 
@@ -526,7 +544,7 @@
             if (!setupMode) {
               setupMode = true;
               btnSetupMode.classList.add('active');
-              btnSetupMode.innerHTML = '<i class="fa-solid fa-xmark"></i> Exit Setup';
+              btnSetupMode.innerHTML = '<i class="fa-solid fa-xmark"></i> Close';
               setupPanel.classList.toggle('hidden', false);
             }
             newConeIdInput.value = eventConeId;
@@ -581,12 +599,28 @@
             if (!setupMode) {
               setupMode = true;
               btnSetupMode.classList.add('active');
-              btnSetupMode.innerHTML = '<i class="fa-solid fa-xmark"></i> Exit Setup';
+              btnSetupMode.innerHTML = '<i class="fa-solid fa-xmark"></i> Close';
               setupPanel.classList.toggle('hidden', false);
             }
             newConeIdInput.value = statusConeId;
           }
         );
+      }
+
+      // Handle cone reset — remove from dashboard
+      if (payload.status === 'reset' && coneStates[statusConeId]) {
+        showToast('Cone Reset', `${statusConeId} has been reset and removed from the map.`);
+        // Delete from KV
+        fetch(`/api/cones/${statusConeId}`, { method: 'DELETE' }).catch(() => {});
+        // Remove from map
+        if (coneStates[statusConeId].marker) map.removeLayer(coneStates[statusConeId].marker);
+        delete coneStates[statusConeId];
+        delete coneEventHistory[statusConeId];
+        updateStats();
+        if (!detailPanel.classList.contains('hidden') && detailConeId.textContent === statusConeId) {
+          detailPanel.classList.add('hidden');
+        }
+        return;
       }
 
       setDeviceOnline(online);

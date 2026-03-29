@@ -341,6 +341,15 @@ void loop() {
       setLED(true, true, false); // Yellow = holding
     } else if (millis() - btnHoldStart >= WIFI_RESET_HOLD_MS) {
       Serial.println("WiFi credentials cleared! Rebooting into portal...");
+      // Notify dashboard before resetting
+      if (mqttClient.connected()) {
+        char topic[64];
+        snprintf(topic, sizeof(topic), MQTT_TOPIC_STATUS, dynamicConeId);
+        char payload[128];
+        snprintf(payload, sizeof(payload), "{\"cone_id\":\"%s\",\"status\":\"reset\"}", dynamicConeId);
+        mqttClient.publish(topic, payload);
+        delay(500); // Give MQTT time to send
+      }
       // Mark as user-initiated reset
       preferences.begin("smartcone", false);
       preferences.putBool("wifi_reset", true);
