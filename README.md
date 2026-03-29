@@ -60,10 +60,12 @@ ESP32 + MPU6050 + Buzzer + RGB LED + WS2812B Matrix + PIR
 
 ### Firmware (ESP32)
 
+- **Auto-calibration** — captures resting orientation at boot using 3-axis dot product, works in any mounting angle
 - **Impact detection** — acceleration spike > 3g triggers alert
-- **Knockover detection** — tilt > 45° sustained for 1 second, emergency buzzer pulse (500ms on/off)
+- **Disturbed detection** — 5°+ deviation from resting, yellow LED, single beep, amber matrix pulse
+- **Knockover detection** — 15°+ deviation from resting (any direction), emergency buzzer pulse (500ms on/off)
 - **Recovery detection** — publishes recovery event with knockdown duration
-- **Intrusion detection** — HC-SR501 PIR sensor, triple beep + blue/white matrix animation
+- **Intrusion detection** — HC-SR501 PIR sensor (only in UPRIGHT state), triple beep + blue/white matrix animation
 - **WiFiManager** — captive portal for WiFi + Cone ID setup (no hardcoded credentials)
 - **Auto-generated Cone ID** — from ESP32 MAC address (e.g. `cone-74ed`), user can override
 - **WiFi reset button** — hold 3s anytime or during boot to clear credentials and reopen portal
@@ -80,10 +82,10 @@ ESP32 + MPU6050 + Buzzer + RGB LED + WS2812B Matrix + PIR
 
 ### Dashboard (Cloudflare Workers + Hono)
 
-- **Fleet Map** — Leaflet.js with colored markers (green/red/orange/blue/gray)
+- **Fleet Map** — Leaflet.js with colored markers (green/red/orange/yellow/blue/gray)
 - **Auto-discovery** — toast notification when unknown cone comes online
-- **Setup Instructions** — step-by-step overlay with portal link and 2.4GHz warning
-- **Cone Simulator** — non-persistent grey/dashed markers, removed on stop
+- **Setup Instructions** — modal overlay with portal link and 2.4GHz warning (opens directly, no manual form)
+- **Cone Simulator** — non-persistent grey/dashed square markers, in-memory only, removed on stop
 - **Stats Bar** — Total Cones (clickable fleet list), Online, Alerts Today, Last Incident
 - **Event Log** — persisted to KV (7-day TTL), date + time columns, mobile card layout
 - **Detail Panel** — state, coordinates, health telemetry, firmware version, event history
@@ -187,7 +189,7 @@ syuk/
 
 | Topic | Direction | Payload | Description |
 |-------|-----------|---------|-------------|
-| `smartcones/{id}/event` | ESP32 → Cloud | `{"cone_id","event","accel_g","tilt_deg","uptime_s","duration_s"}` | Impact, knockover, recovery (with duration), intrusion |
+| `smartcones/{id}/event` | ESP32 → Cloud | `{"cone_id","event","accel_g","tilt_deg","uptime_s","duration_s"}` | Impact, disturbed, knockover, recovery (with duration), intrusion |
 | `smartcones/{id}/status` | ESP32 → Cloud | `{"cone_id","status":"online\|offline\|reset"}` | Online, offline (LWT), reset (before WiFi clear) |
 | `smartcones/{id}/telemetry` | ESP32 → Cloud | `{"cone_id","rssi","uptime_s","free_heap","tilt_deg","firmware"}` | Health data every 30s |
 | `smartcones/{id}/command` | Cloud → ESP32 | `{"action":"reset\|identify\|ota","url":"..."}` | Remote reset, LED identify, OTA update |
@@ -218,9 +220,10 @@ syuk/
 | Event | Trigger | KY-016 LED | Matrix | Buzzer |
 |-------|---------|------------|--------|--------|
 | Impact | Acceleration > 3g | Red | — | 2s continuous |
-| Knockover | Tilt > 45° for 1s | Red | Red flash (500ms) | 500ms pulse |
-| Recovery | Tilt < 30° after knockover | Green | Off | — |
-| Intrusion | PIR motion detected | — | Blue/white chase (3s) | 3 quick beeps |
+| Disturbed | 5°+ deviation from resting | Yellow | Amber pulse | Single beep |
+| Knockover | 15°+ deviation from resting | Red | Red flash (500ms) | 500ms pulse |
+| Recovery | Within 3° of resting | Green | Off | — |
+| Intrusion | PIR motion (UPRIGHT only) | — | Blue/white chase (3s) | 3 quick beeps |
 
 ---
 
