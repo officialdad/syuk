@@ -54,6 +54,35 @@ bool setupWiFi() {
     Serial.printf("WiFi: Auto-generated Cone ID: %s\n", dynamicConeId);
   }
 
+  // Check if user-initiated WiFi reset
+  bool wasReset = preferences.getBool("wifi_reset", false);
+  if (wasReset) {
+    preferences.putBool("wifi_reset", false);
+    Serial.println("WiFi reset mode (yellow LED + amber matrix)");
+    digitalWrite(LED_RED_PIN, HIGH);
+    digitalWrite(LED_GREEN_PIN, HIGH);
+    digitalWrite(LED_BLUE_PIN, LOW); // Yellow
+  }
+
+  // Check reset button before WiFi connect attempt
+  pinMode(WIFI_RESET_PIN, INPUT);
+  if (digitalRead(WIFI_RESET_PIN) == HIGH) {
+    Serial.println("Reset button held during boot — clearing WiFi...");
+    digitalWrite(LED_RED_PIN, HIGH);
+    digitalWrite(LED_GREEN_PIN, HIGH);
+    digitalWrite(LED_BLUE_PIN, LOW); // Yellow
+    delay(1000);
+    WiFiManager wmReset;
+    wmReset.resetSettings();
+    for (int i = 0; i < 3; i++) {
+      digitalWrite(LED_RED_PIN, HIGH); digitalWrite(LED_GREEN_PIN, HIGH);
+      delay(300);
+      digitalWrite(LED_RED_PIN, LOW); digitalWrite(LED_GREEN_PIN, LOW);
+      delay(200);
+    }
+    ESP.restart();
+  }
+
   WiFiManager wm;
   wm.setConfigPortalTimeout(180);
 

@@ -122,17 +122,7 @@ void setup() {
   pinMode(LED_RED_PIN, OUTPUT);
   pinMode(LED_GREEN_PIN, OUTPUT);
   pinMode(LED_BLUE_PIN, OUTPUT);
-  // Check if this is a user-initiated WiFi reset
-  preferences.begin("smartcone", false);
-  bool wasReset = preferences.getBool("wifi_reset", false);
-  if (wasReset) {
-    preferences.putBool("wifi_reset", false); // Clear flag
-    setLED(true, true, false); // Yellow = WiFi reset mode
-    Serial.println("WiFi reset mode (yellow LED)");
-  } else {
-    setLED(false, false, true); // Blue = fresh setup / initializing
-  }
-  preferences.end();
+  setLED(false, false, true); // Blue = initializing
 
   // WiFi reset button
   pinMode(WIFI_RESET_PIN, INPUT);
@@ -141,10 +131,10 @@ void setup() {
   pinMode(BUZZER_PIN, OUTPUT);
   buzzerOff();
 
-  // Init LED matrix
+  // Init LED matrix (off by default)
   matrix.begin();
   matrix.setBrightness(MATRIX_BRIGHTNESS);
-  matrix.fill(matrix.Color(0, 0, 50)); // Dim blue = initializing
+  matrix.clear();
   matrix.show();
   Serial.println("LED Matrix OK");
 
