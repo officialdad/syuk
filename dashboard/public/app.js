@@ -575,6 +575,16 @@
         coneStates[eventConeId].state = derivedState || 'UPRIGHT';
         coneStates[eventConeId].online = true;
         updateMarker(eventConeId);
+
+        // Auto-reset intrusion state after 5 seconds
+        if (derivedState === 'INTRUSION') {
+          setTimeout(() => {
+            if (coneStates[eventConeId] && coneStates[eventConeId].state === 'INTRUSION') {
+              coneStates[eventConeId].state = 'UPRIGHT';
+              updateMarker(eventConeId);
+            }
+          }, 5000);
+        }
       }
 
       // Update stats
