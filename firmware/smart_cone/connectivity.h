@@ -304,7 +304,7 @@ void networkTask(void* parameter) {
   }
 }
 
-bool publishEvent(const char* event, float accelG, float tiltDeg, unsigned long durationS = 0) {
+bool publishEvent(const char* event, float accelG, float tiltDeg, unsigned long durationS = 0, bool sendNtfy = true) {
   if (!eventQueue) return false;
 
   EventMessage msg;
@@ -313,7 +313,7 @@ bool publishEvent(const char* event, float accelG, float tiltDeg, unsigned long 
   msg.accelG = accelG;
   msg.tiltDeg = tiltDeg;
   msg.durationS = durationS;
-  msg.sendNtfy = true;
+  msg.sendNtfy = sendNtfy;
 
   if (xQueueSend(eventQueue, &msg, 0) == pdTRUE) {
     Serial.printf("Event queued: %s\n", event);
@@ -325,21 +325,7 @@ bool publishEvent(const char* event, float accelG, float tiltDeg, unsigned long 
 }
 
 bool publishEventNoNtfy(const char* event, float accelG, float tiltDeg, unsigned long durationS = 0) {
-  if (!eventQueue) return false;
-
-  EventMessage msg;
-  strncpy(msg.event, event, sizeof(msg.event) - 1);
-  msg.event[sizeof(msg.event) - 1] = '\0';
-  msg.accelG = accelG;
-  msg.tiltDeg = tiltDeg;
-  msg.durationS = durationS;
-  msg.sendNtfy = false;
-
-  if (xQueueSend(eventQueue, &msg, 0) == pdTRUE) {
-    Serial.printf("Event queued: %s\n", event);
-    return true;
-  }
-  return false;
+  return publishEvent(event, accelG, tiltDeg, durationS, false);
 }
 
 // --- OTA LED Signals ---

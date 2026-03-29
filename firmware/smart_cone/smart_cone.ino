@@ -256,8 +256,7 @@ void loop() {
   float nax = ax / magnitude, nay = ay / magnitude, naz = az / magnitude;
   // Dot product with resting orientation = cos(angle between them)
   float dotProduct = nax * restAx + nay * restAy + naz * restAz;
-  float tiltDev = acos(constrain(dotProduct, -1.0, 1.0)) * 180.0 / PI;
-  float tiltDeg = tiltDev; // For display/logging compatibility
+  float tiltDeg = acos(constrain(dotProduct, -1.0, 1.0)) * 180.0 / PI;
 
   // Publish telemetry periodically
   if (mqttClient.connected() && (millis() - lastTelemetryTime >= TELEMETRY_INTERVAL_MS)) {
@@ -267,7 +266,7 @@ void loop() {
 
   // Print readings
   Serial.printf("%10.2f | %5.2f | %5.2f | %6.2f | %6.1f | %s\n",
-                ax, ay, az, magnitude, tiltDev, stateToString(state));
+                ax, ay, az, magnitude, tiltDeg, stateToString(state));
 
   // Auto-off buzzer after duration (only for IMPACT_ALERT, not KNOCKED_OVER)
   if (buzzerActive && state != KNOCKED_OVER && state != DISTURBED && (millis() - buzzerStartTime >= BUZZER_DURATION_MS)) {
@@ -298,7 +297,7 @@ void loop() {
         publishEvent("impact", magnitude, tiltDeg);
       }
       // Check for tilt — knockover (high) or disturbed (moderate)
-      else if (tiltDev > KNOCKOVER_DEV) {
+      else if (tiltDeg > KNOCKOVER_DEV) {
         if (!tiltTimerRunning) {
           tiltTimerRunning = true;
           tiltStartTime = millis();
@@ -307,18 +306,15 @@ void loop() {
           knockoverStartTime = millis();
           state = KNOCKED_OVER;
           setLED(true, false); // Red
-          digitalWrite(BUZZER_PIN, HIGH);
-          buzzerActive = true;
-          buzzerStartTime = millis();
+          buzzerOn();
           publishEvent("knockover", magnitude, tiltDeg);
           tiltTimerRunning = false;
         }
       }
-      else if (tiltDev > DISTURBED_DEV) {
+      else if (tiltDeg > DISTURBED_DEV) {
         Serial.println("\n*** CONE DISTURBED ***\n");
         state = DISTURBED;
         setLED(true, true, false); // Yellow
-        // Single short beep
         digitalWrite(BUZZER_PIN, HIGH);
         delay(200);
         digitalWrite(BUZZER_PIN, LOW);
@@ -331,7 +327,7 @@ void loop() {
 
     case DISTURBED:
       // Check for escalation to knockover
-      if (tiltDev > KNOCKOVER_DEV) {
+      if (tiltDeg > KNOCKOVER_DEV) {
         if (!tiltTimerRunning) {
           tiltTimerRunning = true;
           tiltStartTime = millis();
@@ -340,15 +336,13 @@ void loop() {
           knockoverStartTime = millis();
           state = KNOCKED_OVER;
           setLED(true, false); // Red
-          digitalWrite(BUZZER_PIN, HIGH);
-          buzzerActive = true;
-          buzzerStartTime = millis();
+          buzzerOn();
           publishEvent("knockover", magnitude, tiltDeg);
           tiltTimerRunning = false;
         }
       }
       // Check for recovery back to upright
-      else if (tiltDev < RECOVERY_DEV) {
+      else if (tiltDeg < RECOVERY_DEV) {
         Serial.println("\n--- Cone settled, back upright ---\n");
         publishEventNoNtfy("recovery", magnitude, tiltDeg);
         state = UPRIGHT;
@@ -380,7 +374,7 @@ void loop() {
       }
 
       // Wait for recovery (tilt back below recovery threshold)
-      if (tiltDev < RECOVERY_DEV) {
+      if (tiltDeg < RECOVERY_DEV) {
         Serial.println("\n--- Cone recovered! Back upright ---\n");
         unsigned long durationS = (millis() - knockoverStartTime) / 1000;
         publishEventNoNtfy("recovery", magnitude, tiltDeg, durationS);

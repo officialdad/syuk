@@ -3,10 +3,6 @@
 
 // --- Pin Definitions ---
 
-// I2C (MPU6050)
-#define SDA_PIN 21
-#define SCL_PIN 22
-
 // RGB LED (KY-016)
 #define LED_RED_PIN   16
 #define LED_GREEN_PIN 17
@@ -28,7 +24,6 @@
 
 // --- Connectivity (Phase 2) ---
 
-#define WIFI_AP_NAME      "SmartCone-Setup"
 #define MQTT_TOPIC_EVENT  "smartcones/%s/event"
 #define MQTT_TOPIC_STATUS "smartcones/%s/status"
 #define NTFY_SERVER       "https://ntfy.sh"

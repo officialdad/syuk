@@ -99,16 +99,6 @@
     { enableHighAccuracy: true, timeout: 15000 }
   );
 
-  // Marker colors based on state
-  function markerIcon(state, online) {
-    if (!online) return grayIcon;
-    if (state === 'KNOCKED_OVER') return redIcon;
-    if (state === 'IMPACT_ALERT') return orangeIcon;
-    if (state === 'DISTURBED') return orangeIcon;
-    if (state === 'INTRUSION') return blueIcon;
-    return greenIcon;
-  }
-
   // Create colored circle markers
   function createIcon(color) {
     return L.divIcon({
@@ -124,6 +114,18 @@
   const orangeIcon = createIcon('#f59e0b');
   const grayIcon = createIcon('#6b7280');
   const blueIcon = createIcon('#3b82f6');
+
+  const MARKER_ICONS = {
+    KNOCKED_OVER: redIcon,
+    IMPACT_ALERT: orangeIcon,
+    DISTURBED: orangeIcon,
+    INTRUSION: blueIcon,
+  };
+
+  function markerIcon(state, online) {
+    if (!online) return grayIcon;
+    return MARKER_ICONS[state] || greenIcon;
+  }
 
   const simIcon = L.divIcon({
     className: 'cone-marker sim-marker',
@@ -206,6 +208,14 @@
   // --- Cone Status Card ---
   const STATE_MAP = { UPRIGHT: 'upright', IMPACT_ALERT: 'impact_alert', DISTURBED: 'disturbed', KNOCKED_OVER: 'knocked_over', INTRUSION: 'intrusion' };
 
+  const EVENT_BADGE_MAP = {
+    impact:    { cls: 'impact',       icon: 'fa-bolt' },
+    knockover: { cls: 'knocked_over', icon: 'fa-triangle-exclamation' },
+    disturbed: { cls: 'disturbed',    icon: 'fa-hand' },
+    recovery:  { cls: 'recovery',     icon: 'fa-check' },
+    intrusion: { cls: 'intrusion',    icon: 'fa-person-walking' },
+  };
+
   function updateConeStatus(state, id, timestamp) {
     const cls = STATE_MAP[state] || 'upright';
     coneState.className = 'state ' + cls;
@@ -219,13 +229,16 @@
     deviceStatus.textContent = online ? 'Online' : 'Offline';
   }
 
+  const EVENT_TO_STATE = {
+    impact: 'IMPACT_ALERT',
+    knockover: 'KNOCKED_OVER',
+    recovery: 'UPRIGHT',
+    disturbed: 'DISTURBED',
+    intrusion: 'INTRUSION',
+  };
+
   function eventToState(event) {
-    if (event === 'impact') return 'IMPACT_ALERT';
-    if (event === 'knockover') return 'KNOCKED_OVER';
-    if (event === 'recovery') return 'UPRIGHT';
-    if (event === 'disturbed') return 'DISTURBED';
-    if (event === 'intrusion') return 'INTRUSION';
-    return null;
+    return EVENT_TO_STATE[event] || null;
   }
 
   function formatTime(date) {
@@ -251,14 +264,10 @@
 
     const tdEvent = document.createElement('td');
     tdEvent.setAttribute('data-label', 'Event');
+    const badgeInfo = EVENT_BADGE_MAP[eventType] || { cls: 'default', icon: null };
     const badge = document.createElement('span');
-    badge.className = 'event-badge ' + (eventType === 'impact' ? 'impact' : eventType === 'knockover' ? 'knocked_over' : eventType === 'disturbed' ? 'disturbed' : eventType === 'recovery' ? 'recovery' : eventType === 'intrusion' ? 'intrusion' : 'default');
-    let badgeIcon = '';
-    if (eventType === 'impact') badgeIcon = '<i class="fa-solid fa-bolt"></i> ';
-    else if (eventType === 'knockover') badgeIcon = '<i class="fa-solid fa-triangle-exclamation"></i> ';
-    else if (eventType === 'disturbed') badgeIcon = '<i class="fa-solid fa-hand"></i> ';
-    else if (eventType === 'recovery') badgeIcon = '<i class="fa-solid fa-check"></i> ';
-    else if (eventType === 'intrusion') badgeIcon = '<i class="fa-solid fa-person-walking"></i> ';
+    badge.className = 'event-badge ' + badgeInfo.cls;
+    const badgeIcon = badgeInfo.icon ? `<i class="fa-solid ${badgeInfo.icon}"></i> ` : '';
     badge.innerHTML = badgeIcon + eventType;
     tdEvent.appendChild(badge);
 
@@ -291,16 +300,6 @@
   btnSetupMode.addEventListener('click', () => {
     const overlay = document.getElementById('setup-overlay');
     if (overlay) overlay.classList.remove('hidden');
-  });
-
-  // Close setup panel when cone is placed
-  btnPlaceCone.addEventListener('click', () => {
-    // Panel will be hidden after successful placement
-    setTimeout(() => {
-      if (gpsStatus.textContent.includes('successfully')) {
-        setupPanel.classList.add('hidden');
-      }
-    }, 1000);
   });
 
   btnPlaceCone.addEventListener('click', () => {
@@ -600,9 +599,11 @@
         }
       }
 
-      // Update stats
-      alertsToday++;
-      lastIncidentTime = Date.now();
+      // Update stats (recovery is not an alert)
+      if (eventType !== 'recovery') {
+        alertsToday++;
+        lastIncidentTime = Date.now();
+      }
       updateStats();
 
       // Add to event log
@@ -914,12 +915,7 @@
       location.textContent = cone.label || '--';
 
       const badge = document.createElement('span');
-      let badgeClass = 'upright';
-      if (!cone.online) badgeClass = 'offline';
-      else if (cone.state === 'KNOCKED_OVER') badgeClass = 'knocked_over';
-      else if (cone.state === 'IMPACT_ALERT') badgeClass = 'impact_alert';
-      else if (cone.state === 'DISTURBED') badgeClass = 'disturbed';
-      else if (cone.state === 'INTRUSION') badgeClass = 'intrusion';
+      const badgeClass = !cone.online ? 'offline' : (STATE_MAP[cone.state] || 'upright');
       badge.className = 'cone-state-badge ' + badgeClass;
       badge.textContent = cone.online ? (cone.state || 'UPRIGHT') : 'OFFLINE';
 
