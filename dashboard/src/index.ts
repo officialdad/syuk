@@ -177,7 +177,7 @@ app.post('/api/firmware/version', async (c) => {
 });
 
 app.get('/api/version', (c) => {
-  return c.json({ version: '1.0.12-rc.1' });
+  return c.json({ version: '1.0.13-rc.1' });
 });
 
 app.get('/api/config', (c) => {
