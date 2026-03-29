@@ -8,6 +8,9 @@
     "rc": "node ../scripts/bump-version.mjs",
     "rc:minor": "node ../scripts/bump-version.mjs minor",
     "rc:major": "node ../scripts/bump-version.mjs major",
+    "release": "node ../scripts/release.mjs",
+    "release:major": "node ../scripts/release.mjs major",
+    "release:patch": "node ../scripts/release.mjs patch",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
