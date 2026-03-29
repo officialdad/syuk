@@ -411,6 +411,7 @@ void performOTA(const char* url) {
   otaClient.setInsecure();
 
   httpUpdate.setLedPin(-1); // We handle LED ourselves
+  httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
 
   t_httpUpdate_return ret = httpUpdate.update(otaClient, url);
 
