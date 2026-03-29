@@ -228,6 +228,7 @@ void loop() {
   // Calculate magnitude and tilt
   float magnitude = sqrt(ax * ax + ay * ay + az * az);
   float tiltDeg = acos(constrain(az / magnitude, -1.0, 1.0)) * 180.0 / PI;
+  float tiltDev = abs(tiltDeg - CONE_RESTING_TILT); // Deviation from resting position
 
   // Publish telemetry periodically
   if (mqttClient.connected() && (millis() - lastTelemetryTime >= TELEMETRY_INTERVAL_MS)) {
@@ -268,7 +269,7 @@ void loop() {
         publishEvent("impact", magnitude, tiltDeg);
       }
       // Check for tilt — knockover (high) or disturbed (moderate)
-      else if (tiltDeg > TILT_THRESHOLD_DEG) {
+      else if (tiltDev > KNOCKOVER_DEV) {
         if (!tiltTimerRunning) {
           tiltTimerRunning = true;
           tiltStartTime = millis();
@@ -284,7 +285,7 @@ void loop() {
           tiltTimerRunning = false;
         }
       }
-      else if (tiltDeg > DISTURBED_THRESHOLD) {
+      else if (tiltDev > DISTURBED_DEV) {
         Serial.println("\n*** CONE DISTURBED ***\n");
         state = DISTURBED;
         setLED(true, true, false); // Yellow
@@ -301,7 +302,7 @@ void loop() {
 
     case DISTURBED:
       // Check for escalation to knockover
-      if (tiltDeg > TILT_THRESHOLD_DEG) {
+      if (tiltDev > KNOCKOVER_DEV) {
         if (!tiltTimerRunning) {
           tiltTimerRunning = true;
           tiltStartTime = millis();
@@ -318,7 +319,7 @@ void loop() {
         }
       }
       // Check for recovery back to upright
-      else if (tiltDeg < TILT_RECOVERY_DEG) {
+      else if (tiltDev < RECOVERY_DEV) {
         Serial.println("\n--- Cone settled, back upright ---\n");
         publishEventNoNtfy("recovery", magnitude, tiltDeg);
         state = UPRIGHT;
@@ -350,7 +351,7 @@ void loop() {
       }
 
       // Wait for recovery (tilt back below recovery threshold)
-      if (tiltDeg < TILT_RECOVERY_DEG) {
+      if (tiltDev < RECOVERY_DEV) {
         Serial.println("\n--- Cone recovered! Back upright ---\n");
         unsigned long durationS = (millis() - knockoverStartTime) / 1000;
         publishEventNoNtfy("recovery", magnitude, tiltDeg, durationS);
