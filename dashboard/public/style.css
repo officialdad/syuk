@@ -131,6 +131,16 @@ h2 {
   background: rgba(239, 68, 68, 0.1);
 }
 
+.state.disturbed {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.state.intrusion {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
 .status-details {
   display: flex;
   flex-wrap: wrap;
@@ -379,6 +389,11 @@ tbody tr:hover {
   background: rgba(167, 139, 250, 0.15);
 }
 
+.event-badge.disturbed {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+}
+
 .event-badge.default {
   color: #94a3b8;
   background: rgba(148, 163, 184, 0.15);
@@ -554,6 +569,8 @@ h2 i {
 .cone-state-badge.upright { color: #22c55e; background: rgba(34, 197, 94, 0.1); }
 .cone-state-badge.impact_alert { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
 .cone-state-badge.knocked_over { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+.cone-state-badge.disturbed { color: #fbbf24; background: rgba(251, 191, 36, 0.1); }
+.cone-state-badge.intrusion { color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
 .cone-state-badge.offline { color: #6b7280; background: rgba(107, 114, 128, 0.1); }
 
 /* Navigation cards */

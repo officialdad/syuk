@@ -918,6 +918,8 @@
       if (!cone.online) badgeClass = 'offline';
       else if (cone.state === 'KNOCKED_OVER') badgeClass = 'knocked_over';
       else if (cone.state === 'IMPACT_ALERT') badgeClass = 'impact_alert';
+      else if (cone.state === 'DISTURBED') badgeClass = 'disturbed';
+      else if (cone.state === 'INTRUSION') badgeClass = 'intrusion';
       badge.className = 'cone-state-badge ' + badgeClass;
       badge.textContent = cone.online ? (cone.state || 'UPRIGHT') : 'OFFLINE';
 
