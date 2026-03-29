@@ -38,9 +38,18 @@
 #define MQTT_TOPIC_TELEMETRY "smartcones/%s/telemetry"
 
 // --- Intrusion Detection (PIR) ---
-#define PIR_PIN 23
-#define INTRUSION_COOLDOWN_MS 15000
-#define PIR_WARMUP_MS 60000
+#define PIR_PIN 27
+#define INTRUSION_COOLDOWN_MS 5000
+#define PIR_WARMUP_MS 10000
+
+// --- WS2812B LED Matrix (4x4) ---
+#define MATRIX_PIN 14
+#define MATRIX_NUM_LEDS 16
+#define MATRIX_BRIGHTNESS 255  // Max brightness
+
+// --- WiFi Reset Button ---
+#define WIFI_RESET_PIN 26
+#define WIFI_RESET_HOLD_MS 3000  // Hold 3s to reset WiFi
 
 // --- Firmware Version & OTA ---
 #define FIRMWARE_VERSION "1.0.0"

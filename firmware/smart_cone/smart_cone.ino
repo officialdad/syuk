@@ -1,8 +1,11 @@
 #include <Wire.h>
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
+#include <Adafruit_NeoPixel.h>
 #include "config.h"
 #include "connectivity.h"
+
+Adafruit_NeoPixel matrix(MATRIX_NUM_LEDS, MATRIX_PIN, NEO_GRB + NEO_KHZ800);
 
 // --- State Machine ---
 enum ConeState {
@@ -22,8 +25,8 @@ bool tiltTimerRunning = false;
 bool mqttConnected = false;
 unsigned long lastTelemetryTime = 0;
 unsigned long knockoverStartTime = 0;
-// unsigned long lastIntrusionTime = 0;  // PIR — enable when hardware wired
-// unsigned long pirWarmupStart = 0;
+unsigned long lastIntrusionTime = 0;
+unsigned long pirWarmupStart = 0;
 
 // --- Helper Functions ---
 
@@ -53,6 +56,32 @@ const char* stateToString(ConeState s) {
   }
 }
 
+// --- LED Matrix display ---
+void updateMatrix(ConeState s, bool connected) {
+  static ConeState lastState = (ConeState)-1;
+  static bool lastConnected = false;
+  if (s == lastState && connected == lastConnected) return; // Skip if no change
+  lastState = s;
+  lastConnected = connected;
+
+  switch (s) {
+    case UPRIGHT:
+      if (connected) {
+        matrix.fill(matrix.Color(0, 30, 0)); // Green
+      } else {
+        matrix.fill(matrix.Color(0, 0, 30)); // Blue
+      }
+      break;
+    case IMPACT_ALERT:
+      matrix.fill(matrix.Color(30, 20, 0)); // Yellow/amber
+      break;
+    case KNOCKED_OVER:
+      matrix.fill(matrix.Color(30, 0, 0)); // Red
+      break;
+  }
+  matrix.show();
+}
+
 // --- Setup ---
 
 void setup() {
@@ -68,14 +97,24 @@ void setup() {
   pinMode(LED_BLUE_PIN, OUTPUT);
   setLED(false, false, true); // Blue = initializing
 
+  // WiFi reset button
+  pinMode(WIFI_RESET_PIN, INPUT);
+
   // Init buzzer pin
   pinMode(BUZZER_PIN, OUTPUT);
   buzzerOff();
 
-  // PIR sensor — commented out until hardware wired
-  // pinMode(PIR_PIN, INPUT);
-  // pirWarmupStart = millis();
-  // Serial.println("PIR warming up (60s)...");
+  // Init LED matrix
+  matrix.begin();
+  matrix.setBrightness(MATRIX_BRIGHTNESS);
+  matrix.fill(matrix.Color(0, 0, 50)); // Dim blue = initializing
+  matrix.show();
+  Serial.println("LED Matrix OK");
+
+  // PIR sensor
+  pinMode(PIR_PIN, INPUT);
+  pirWarmupStart = millis();
+  Serial.println("PIR warming up (60s)...");
 
   // Init MPU6050
   if (!mpu.begin()) {
@@ -243,24 +282,54 @@ void loop() {
       break;
   }
 
-  // --- Intrusion Detection (PIR) — enable when hardware wired ---
-  // if (millis() - pirWarmupStart >= PIR_WARMUP_MS) {
-  //   if (digitalRead(PIR_PIN) == HIGH) {
-  //     unsigned long now = millis();
-  //     if (now - lastIntrusionTime >= INTRUSION_COOLDOWN_MS) {
-  //       lastIntrusionTime = now;
-  //       Serial.println("\n*** INTRUSION DETECTED! ***\n");
-  //       for (int i = 0; i < 3; i++) {
-  //         digitalWrite(BUZZER_PIN, HIGH);
-  //         delay(100);
-  //         digitalWrite(BUZZER_PIN, LOW);
-  //         delay(100);
-  //       }
-  //       publishEvent("intrusion", magnitude, tiltDeg);
-  //       sendNtfyAlert("intrusion", magnitude, tiltDeg);
-  //     }
-  //   }
-  // }
+  // --- Intrusion Detection (PIR) ---
+  if (millis() - pirWarmupStart >= PIR_WARMUP_MS) {
+    if (digitalRead(PIR_PIN) == HIGH) {
+      unsigned long now = millis();
+      if (now - lastIntrusionTime >= INTRUSION_COOLDOWN_MS) {
+        lastIntrusionTime = now;
+        Serial.println("\n*** INTRUSION DETECTED! ***\n");
+        // Quick triple beep
+        for (int i = 0; i < 3; i++) {
+          digitalWrite(BUZZER_PIN, HIGH);
+          delay(100);
+          digitalWrite(BUZZER_PIN, LOW);
+          delay(100);
+        }
+        publishEvent("intrusion", magnitude, tiltDeg);
+      }
+    }
+  }
+
+  // --- WiFi Reset Button (hold 3s anytime) ---
+  static unsigned long btnHoldStart = 0;
+  static bool btnHeld = false;
+  if (digitalRead(WIFI_RESET_PIN) == HIGH) {
+    if (!btnHeld) {
+      btnHeld = true;
+      btnHoldStart = millis();
+      setLED(true, true, false); // Yellow = holding
+    } else if (millis() - btnHoldStart >= WIFI_RESET_HOLD_MS) {
+      Serial.println("WiFi credentials cleared! Rebooting into portal...");
+      for (int i = 0; i < 3; i++) {
+        setLED(true, true, false); delay(300);
+        setLED(false, false, false); delay(200);
+      }
+      WiFiManager wm;
+      wm.resetSettings();
+      ESP.restart();
+    }
+  } else {
+    if (btnHeld) {
+      // Released too early — restore normal LED
+      btnHeld = false;
+      if (mqttClient.connected()) setLED(false, true, false);
+      else setLED(false, false, true);
+    }
+  }
+
+  // Update LED matrix to match state
+  updateMatrix(state, mqttClient.connected());
 
   delay(50); // 20Hz sampling rate
 }
