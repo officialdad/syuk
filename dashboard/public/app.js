@@ -668,6 +668,54 @@
           firmware: payload.firmware,
         };
       }
+      // Handle OTA progress updates
+      if (payload.ota_status) {
+        const fwStatus = document.getElementById('detail-fw-status');
+        const otaBtn = document.getElementById('detail-ota-btn');
+        if (fwStatus && detailConeId.textContent === telConeId) {
+          const status = payload.ota_status;
+          const progress = payload.ota_progress || 0;
+          const error = payload.ota_error || '';
+
+          if (status === 'downloading') {
+            fwStatus.innerHTML = `
+              <div class="ota-progress">
+                <div class="ota-progress-text">
+                  <span><span class="ota-spinner"></span> Downloading firmware...</span>
+                  <span id="ota-percent">${progress}%</span>
+                </div>
+                <div class="ota-progress-bar">
+                  <div class="ota-progress-fill" id="ota-fill" style="width:${progress}%"></div>
+                </div>
+              </div>
+            `;
+          } else if (status === 'success') {
+            fwStatus.innerHTML = `
+              <div class="ota-progress">
+                <div class="ota-progress-text success">
+                  <span><i class="fa-solid fa-circle-check"></i> Update complete — rebooting...</span>
+                  <span>100%</span>
+                </div>
+                <div class="ota-progress-bar">
+                  <div class="ota-progress-fill" style="width:100%;background:#22c55e;"></div>
+                </div>
+              </div>
+            `;
+            if (otaBtn) otaBtn.style.display = 'none';
+            // Refresh detail panel after reboot (give it 10s)
+            setTimeout(() => showConeDetail(telConeId), 10000);
+          } else if (status === 'failed') {
+            fwStatus.innerHTML = `
+              <div class="ota-progress">
+                <div class="ota-progress-text failed">
+                  <span><i class="fa-solid fa-circle-xmark"></i> Update failed: ${error}</span>
+                </div>
+              </div>
+            `;
+            if (otaBtn) otaBtn.style.display = 'block';
+          }
+        }
+      }
       // Update detail panel if showing this cone
       if (!detailPanel.classList.contains('hidden') && detailConeId.textContent === telConeId) {
         showConeDetail(telConeId);
@@ -815,19 +863,54 @@
     const id = detailConeId.textContent;
     if (!confirm(`Update firmware on ${id}? The cone will reboot after update.`)) return;
 
+    const otaBtn = document.getElementById('detail-ota-btn');
+    const fwStatus = document.getElementById('detail-fw-status');
+
     try {
       const res = await fetch('/api/firmware/version');
       const fw = await res.json();
       if (!fw.url) {
-        alert('No firmware update available. Upload a new build first.');
+        alert('No firmware update available.');
         return;
       }
+
+      // Show progress UI
+      otaBtn.style.display = 'none';
+      fwStatus.innerHTML = `
+        <div class="ota-progress">
+          <div class="ota-progress-text">
+            <span><span class="ota-spinner"></span> Sending update command...</span>
+            <span id="ota-percent">0%</span>
+          </div>
+          <div class="ota-progress-bar">
+            <div class="ota-progress-fill" id="ota-fill"></div>
+          </div>
+        </div>
+      `;
+
+      // Send OTA command
       if (client && client.connected) {
         client.publish(`smartcones/${id}/command`, JSON.stringify({ action: 'ota', url: fw.url }));
-        alert(`OTA update sent to ${id}. Watch the LED for progress.`);
       }
+
+      // Timeout after 120s
+      setTimeout(() => {
+        const fill = document.getElementById('ota-fill');
+        if (fill && parseInt(fill.style.width) < 100) {
+          fwStatus.innerHTML = `
+            <div class="ota-progress">
+              <div class="ota-progress-text failed">
+                <span><i class="fa-solid fa-circle-xmark"></i> Update timed out — check the device</span>
+              </div>
+            </div>
+          `;
+          otaBtn.style.display = 'block';
+        }
+      }, 120000);
+
     } catch (err) {
-      console.error('Failed to get firmware version:', err);
+      console.error('OTA error:', err);
+      alert('Failed to initiate update.');
     }
   });
 

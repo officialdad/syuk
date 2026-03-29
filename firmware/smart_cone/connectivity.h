@@ -410,22 +410,66 @@ void performOTA(const char* url) {
   WiFiClientSecure otaClient;
   otaClient.setInsecure();
 
-  httpUpdate.setLedPin(-1); // We handle LED ourselves
+  httpUpdate.setLedPin(-1);
   httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+
+  // Publish OTA status via MQTT
+  char statusTopic[64];
+  snprintf(statusTopic, sizeof(statusTopic), MQTT_TOPIC_TELEMETRY, dynamicConeId);
+
+  auto publishOtaStatus = [&](const char* status, int progress = -1, const char* error = nullptr) {
+    if (!mqttClient.connected()) return;
+    JsonDocument doc;
+    doc["cone_id"] = dynamicConeId;
+    doc["ota_status"] = status;
+    if (progress >= 0) doc["ota_progress"] = progress;
+    if (error) doc["ota_error"] = error;
+    char payload[256];
+    serializeJson(doc, payload, sizeof(payload));
+    mqttClient.publish(statusTopic, payload);
+    mqttClient.loop(); // Ensure message is sent
+  };
+
+  publishOtaStatus("downloading", 0);
+
+  // Progress callback — publish every 10%
+  int lastReportedPercent = 0;
+  httpUpdate.onProgress([&](int cur, int total) {
+    if (total <= 0) return;
+    int percent = (cur * 100) / total;
+    if (percent >= lastReportedPercent + 10 || percent == 100) {
+      lastReportedPercent = percent;
+      Serial.printf("OTA: %d%%\n", percent);
+      // Publish progress (can't use lambda capture with MQTT easily, use global)
+      if (mqttClient.connected()) {
+        JsonDocument doc;
+        doc["cone_id"] = dynamicConeId;
+        doc["ota_status"] = "downloading";
+        doc["ota_progress"] = percent;
+        char payload[256];
+        serializeJson(doc, payload, sizeof(payload));
+        mqttClient.publish(statusTopic, payload);
+        mqttClient.loop();
+      }
+    }
+  });
 
   t_httpUpdate_return ret = httpUpdate.update(otaClient, url);
 
   switch (ret) {
     case HTTP_UPDATE_FAILED:
       Serial.printf("OTA: Failed (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
+      publishOtaStatus("failed", -1, httpUpdate.getLastErrorString().c_str());
       otaLedSignal("failed");
       break;
     case HTTP_UPDATE_NO_UPDATES:
       Serial.println("OTA: No update available");
+      publishOtaStatus("failed", -1, "No update available");
       otaLedSignal("failed");
       break;
     case HTTP_UPDATE_OK:
       Serial.println("OTA: Success! Rebooting...");
+      publishOtaStatus("success", 100);
       otaLedSignal("success");
       delay(1000);
       ESP.restart();
