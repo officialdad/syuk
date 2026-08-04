@@ -232,6 +232,7 @@ void setup() {
 // --- Main Loop ---
 
 void loop() {
+  wifiLoop();
   mqttLoop();
 
   // Track MQTT connection state for LED

@@ -85,6 +85,14 @@ bool setupWiFi() {
 
   WiFiManager wm;
   wm.setConfigPortalTimeout(180);
+  // Without this, a missing AP sits in waitForConnectResult and then blocks in
+  // the portal for the full 180s as an AP — not scanning for the real network.
+  wm.setConnectTimeout(20);
+  // With credentials already saved, a failed connect means the AP is down, not
+  // that we need reconfiguring — so don't sit in the portal for 180s. Fall
+  // through to loop() and let wifiLoop() retry in the background instead. The
+  // reset button clears credentials, which brings the portal back.
+  if (wm.getWiFiIsSaved()) wm.setEnableConfigPortal(false);
 
   // Custom parameter for Cone ID
   WiFiManagerParameter coneIdParam("cone_id", "Cone ID (e.g. cone-002)", dynamicConeId, CONE_ID_MAX_LEN);
@@ -215,6 +223,37 @@ bool mqttReconnect() {
     Serial.println("). Retrying...");
     return false;
   }
+}
+
+// setupWiFi() runs once at boot. If the AP was down at that moment — an iOS
+// hotspot with no client attached, say — nothing else would ever retry, and
+// mqttReconnect() bails on !WL_CONNECTED, so the board stays offline until a
+// physical reset. Credentials are already in NVS, so reconnect() is enough.
+void wifiLoop() {
+  static unsigned long lastWifiRetry = 0;
+  static bool wifiWasDown = false;
+
+  if (WiFi.status() == WL_CONNECTED) {
+    if (wifiWasDown) {
+      wifiWasDown = false;
+      Serial.print("WiFi: Reconnected! IP: ");
+      Serial.println(WiFi.localIP());
+    }
+    return;
+  }
+
+  if (!wifiWasDown) {
+    wifiWasDown = true;
+    Serial.println("WiFi: Disconnected — retrying saved credentials in background...");
+  }
+
+  unsigned long now = millis();
+  if (now - lastWifiRetry < WIFI_RETRY_MS) return;
+  lastWifiRetry = now;
+  // The core auto-reconnects on its own and rejects reconnect() while an
+  // attempt is in flight, so this only matters once it has given up.
+  WiFi.mode(WIFI_STA); // portal timeout can leave the radio in AP mode
+  WiFi.reconnect();
 }
 
 void mqttLoop() {

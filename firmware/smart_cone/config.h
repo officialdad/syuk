@@ -29,6 +29,7 @@
 #define NTFY_SERVER       "https://ntfy.sh"
 #define DASHBOARD_API     "https://kon.automasi.my"
 #define MQTT_RECONNECT_MS 5000
+#define WIFI_RETRY_MS     10000
 
 // --- Telemetry ---
 #define TELEMETRY_INTERVAL_MS 30000
@@ -42,14 +43,14 @@
 // --- WS2812B LED Matrix (4x4) ---
 #define MATRIX_PIN 14
 #define MATRIX_NUM_LEDS 16
-#define MATRIX_BRIGHTNESS 255  // Max brightness
+#define MATRIX_BRIGHTNESS 60   // 16 px white at 255 is ~960 mA off VIN — browns out USB power
 
 // --- WiFi Reset Button ---
 #define WIFI_RESET_PIN 26
 #define WIFI_RESET_HOLD_MS 3000  // Hold 3s to reset WiFi
 
 // --- Firmware Version & OTA ---
-#define FIRMWARE_VERSION "1.2.2"
+#define FIRMWARE_VERSION "1.2.3"
 #define OTA_VERSION_URL DASHBOARD_API "/api/firmware/version"
 
 // --- Cone ID ---
