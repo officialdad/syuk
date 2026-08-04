@@ -33,6 +33,10 @@ unsigned long pirWarmupStart = 0;
 float restAx = 0, restAy = 0, restAz = 1.0; // Default: flat
 bool calibrated = false;
 
+// False when the MPU6050 is absent. Tilt/impact detection is skipped, but
+// connectivity, PIR, buzzer and LED all still run.
+bool mpuOk = false;
+
 // --- Helper Functions ---
 
 void setLED(bool red, bool green, bool blue = false) {
@@ -161,27 +165,21 @@ void setup() {
   Serial.println("PIR warming up (60s)...");
 
   // Init MPU6050
-  if (!mpu.begin()) {
+  mpuOk = mpu.begin();
+  if (!mpuOk) {
     Serial.println("ERROR: MPU6050 not found! Check wiring:");
     Serial.println("  3.3V -> VCC");
     Serial.println("  GND  -> GND");
     Serial.println("  GPIO21 -> SDA");
     Serial.println("  GPIO22 -> SCL");
-
-    // Blink red LED to indicate error
-    while (1) {
-      setLED(true, false);
-      delay(500);
-      setLED(false, false);
-      delay(500);
-    }
+    Serial.println("Continuing without tilt detection.");
+  } else {
+    mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+    mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+    mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+    Serial.println("MPU6050 OK");
   }
 
-  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
-  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
-  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
-
-  Serial.println("MPU6050 OK");
   Serial.println("LED OK (yellow = initializing)");
   Serial.println("Buzzer OK");
 
@@ -202,25 +200,29 @@ void setup() {
   checkFirmwareUpdate();
 
   // Calibrate resting orientation (average 20 samples)
-  Serial.println("Calibrating resting orientation...");
-  float sumAx = 0, sumAy = 0, sumAz = 0;
-  for (int i = 0; i < 20; i++) {
-    sensors_event_t a, g, t;
-    mpu.getEvent(&a, &g, &t);
-    sumAx += a.acceleration.x / 9.81;
-    sumAy += a.acceleration.y / 9.81;
-    sumAz += a.acceleration.z / 9.81;
-    delay(50);
+  if (mpuOk) {
+    Serial.println("Calibrating resting orientation...");
+    float sumAx = 0, sumAy = 0, sumAz = 0;
+    for (int i = 0; i < 20; i++) {
+      sensors_event_t a, g, t;
+      mpu.getEvent(&a, &g, &t);
+      sumAx += a.acceleration.x / 9.81;
+      sumAy += a.acceleration.y / 9.81;
+      sumAz += a.acceleration.z / 9.81;
+      delay(50);
+    }
+    restAx = sumAx / 20.0;
+    restAy = sumAy / 20.0;
+    restAz = sumAz / 20.0;
+    float restMag = sqrt(restAx * restAx + restAy * restAy + restAz * restAz);
+    restAx /= restMag;
+    restAy /= restMag;
+    restAz /= restMag;
+    calibrated = true;
+    Serial.printf("Resting orientation: (%.2f, %.2f, %.2f)\n", restAx, restAy, restAz);
+  } else {
+    Serial.println("Skipping orientation calibration — no MPU6050.");
   }
-  restAx = sumAx / 20.0;
-  restAy = sumAy / 20.0;
-  restAz = sumAz / 20.0;
-  float restMag = sqrt(restAx * restAx + restAy * restAy + restAz * restAz);
-  restAx /= restMag;
-  restAy /= restMag;
-  restAz /= restMag;
-  calibrated = true;
-  Serial.printf("Resting orientation: (%.2f, %.2f, %.2f)\n", restAx, restAy, restAz);
 
   Serial.println("\nSmart Cone ready!\n");
   Serial.println("Accel X(g) | Y(g)  | Z(g)  | Mag(g) | Dev(°) | State");
@@ -242,21 +244,24 @@ void loop() {
   }
 
   // Read sensor
-  sensors_event_t accel, gyro, temp;
-  mpu.getEvent(&accel, &gyro, &temp);
+  float ax = 0, ay = 0, az = 0, magnitude = 0, tiltDeg = 0;
+  if (mpuOk) {
+    sensors_event_t accel, gyro, temp;
+    mpu.getEvent(&accel, &gyro, &temp);
 
-  // Convert from m/s² to g (9.81 m/s² = 1g)
-  float ax = accel.acceleration.x / 9.81;
-  float ay = accel.acceleration.y / 9.81;
-  float az = accel.acceleration.z / 9.81;
+    // Convert from m/s² to g (9.81 m/s² = 1g)
+    ax = accel.acceleration.x / 9.81;
+    ay = accel.acceleration.y / 9.81;
+    az = accel.acceleration.z / 9.81;
 
-  // Calculate magnitude and deviation from resting orientation
-  float magnitude = sqrt(ax * ax + ay * ay + az * az);
-  // Normalize current reading
-  float nax = ax / magnitude, nay = ay / magnitude, naz = az / magnitude;
-  // Dot product with resting orientation = cos(angle between them)
-  float dotProduct = nax * restAx + nay * restAy + naz * restAz;
-  float tiltDeg = acos(constrain(dotProduct, -1.0, 1.0)) * 180.0 / PI;
+    // Calculate magnitude and deviation from resting orientation
+    magnitude = sqrt(ax * ax + ay * ay + az * az);
+    // Normalize current reading
+    float nax = ax / magnitude, nay = ay / magnitude, naz = az / magnitude;
+    // Dot product with resting orientation = cos(angle between them)
+    float dotProduct = nax * restAx + nay * restAy + naz * restAz;
+    tiltDeg = acos(constrain(dotProduct, -1.0, 1.0)) * 180.0 / PI;
+  }
 
   // Publish telemetry periodically
   if (mqttClient.connected() && (millis() - lastTelemetryTime >= TELEMETRY_INTERVAL_MS)) {
@@ -265,8 +270,13 @@ void loop() {
   }
 
   // Print readings
-  Serial.printf("%10.2f | %5.2f | %5.2f | %6.2f | %6.1f | %s\n",
-                ax, ay, az, magnitude, tiltDeg, stateToString(state));
+  if (mpuOk) {
+    Serial.printf("%10.2f | %5.2f | %5.2f | %6.2f | %6.1f | %s\n",
+                  ax, ay, az, magnitude, tiltDeg, stateToString(state));
+  } else {
+    Serial.printf("   no MPU   |   —   |   —   |   —    |   —    | %s\n",
+                  stateToString(state));
+  }
 
   // Auto-off buzzer after duration (only for IMPACT_ALERT, not KNOCKED_OVER)
   if (buzzerActive && state != KNOCKED_OVER && state != DISTURBED && (millis() - buzzerStartTime >= BUZZER_DURATION_MS)) {
@@ -275,7 +285,11 @@ void loop() {
 
   // --- State Machine ---
 
-  switch (state) {
+  // Without tilt data there is nothing to transition on, so hold UPRIGHT and
+  // just keep the LED tracking the MQTT connection the way UPRIGHT would.
+  if (!mpuOk) setLED(false, mqttConnected, !mqttConnected);
+
+  if (mpuOk) switch (state) {
 
     case UPRIGHT:
       if (mqttConnected) {
