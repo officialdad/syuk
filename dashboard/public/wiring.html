@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Cone — Breadboard Wiring</title>
+
+<style>
+  :root {
+    --bg: #fbfaf8;
+    --fg: #1c1a17;
+    --muted: #6b665e;
+    --line: #d8d3ca;
+    --card: #ffffff;
+    --warn-bg: #fdf4e8;
+    --warn-br: #d9a441;
+    --w-black:  #2f2c28;
+    --w-red:    #cc2f2a;
+    --w-orange: #d4780c;
+    --w-yellow: #a8820a;
+    --w-blue:   #2159c4;
+    --w-brown:  #8a5527;
+    --w-green:  #1d8348;
+    --w-purple: #7231d8;
+    --w-white:  #8d8880;
+    --w-grey:   #5f6670;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #171614; --fg: #eae7e1; --muted: #9b958b; --line: #383530; --card: #201e1b;
+      --warn-bg: #2a2115; --warn-br: #a8802f;
+      --w-black: #b9b3ab; --w-red: #ff756a; --w-orange: #f2a445; --w-yellow: #e5c351;
+      --w-blue: #7ba7f5; --w-brown: #cd9464; --w-green: #5ed08c; --w-purple: #b490f7;
+      --w-white: #f2efe9; --w-grey: #98a1ad;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #171614; --fg: #eae7e1; --muted: #9b958b; --line: #383530; --card: #201e1b;
+    --warn-bg: #2a2115; --warn-br: #a8802f;
+    --w-black: #b9b3ab; --w-red: #ff756a; --w-orange: #f2a445; --w-yellow: #e5c351;
+    --w-blue: #7ba7f5; --w-brown: #cd9464; --w-green: #5ed08c; --w-purple: #b490f7;
+    --w-white: #f2efe9; --w-grey: #98a1ad;
+  }
+  :root[data-theme="light"] {
+    --bg: #fbfaf8; --fg: #1c1a17; --muted: #6b665e; --line: #d8d3ca; --card: #ffffff;
+    --warn-bg: #fdf4e8; --warn-br: #d9a441;
+    --w-black: #2f2c28; --w-red: #cc2f2a; --w-orange: #d4780c; --w-yellow: #a8820a;
+    --w-blue: #2159c4; --w-brown: #8a5527; --w-green: #1d8348; --w-purple: #7231d8;
+    --w-white: #8d8880; --w-grey: #5f6670;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    margin: 0;
+    padding: 2.5rem 1.25rem 5rem;
+  }
+  main { max-width: 68rem; margin: 0 auto; }
+  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 .35rem; letter-spacing: -.02em; }
+  h2 {
+    font-size: 1.15rem; margin: 2.75rem 0 .9rem; letter-spacing: -.01em;
+    padding-bottom: .4rem; border-bottom: 1px solid var(--line);
+  }
+  .sub { color: var(--muted); margin: 0 0 1rem; }
+  code {
+    font: 500 .875em ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: color-mix(in srgb, var(--fg) 8%, transparent);
+    padding: .1em .35em; border-radius: 3px;
+  }
+  figure {
+    margin: 0 0 1.5rem; background: var(--card);
+    border: 1px solid var(--line); border-radius: 10px; padding: 1.25rem;
+  }
+  figure svg { display: block; width: 100%; max-width: 100%; height: auto; }
+  figcaption { color: var(--muted); font-size: .875rem; margin-top: 1rem; }
+  .note {
+    background: var(--warn-bg); border-left: 3px solid var(--warn-br);
+    padding: .9rem 1.1rem; border-radius: 0 6px 6px 0; margin: 1.25rem 0;
+  }
+  .note strong { display: block; margin-bottom: .25rem; }
+  .key { display: flex; flex-wrap: wrap; gap: 1.1rem; font-size: .8rem; color: var(--muted); margin-top: .9rem; }
+  .key span { display: flex; align-items: center; gap: .4rem; }
+  .key i { width: 1.4rem; height: 0; border-top-width: 2.5px; border-top-style: solid; }
+</style>
+
+<main>
+
+<h1>Smart Cone — breadboard wiring</h1>
+<p class="sub">ESP32 DevKit 30-pin. Pin assignments taken from <code>firmware/smart_cone/config.h</code>.</p>
+
+<h2>Every jumper</h2>
+
+<p class="sub">One line per physical wire — nineteen of them. Power and ground included, because leaving them implicit is how a module ends up looking dead when only its supply is missing.</p>
+
+<figure>
+<svg viewBox="0 0 1000 620" role="img" aria-label="Complete jumper list grouped by module. MPU6050: D21 to SDA blue, D22 to SCL yellow, 3V3 to VCC red, GND to GND black. RGB LED: D16 to R brown, D17 to G green, D5 to B purple, GND to the longest leg black. LED matrix: D14 to DIN white, VIN to 5V orange, GND to GND black. PIR: D27 to OUT grey, VIN to VCC orange, GND to GND black. Button: D26 to OUT green, 3V3 to VCC red, GND to GND black. Buzzer: D13 to plus yellow, GND to minus black.">
+  <defs>
+    <marker id="h-black"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--w-black)"/></marker>
+    <marker id="h-red"    viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--w-red)"/></marker>
+    <marker id="h-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--w-orange)"/></marker>
+    <marker id="h-yellow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--w-yellow)"/></marker>
+    <marker id="h-blue"   viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--w-blue)"/></marker>
+    <marker id="h-brown"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--w-brown)"/></marker>
+    <marker id="h-green"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--w-green)"/></marker>
+    <marker id="h-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--w-purple)"/></marker>
+    <marker id="h-white"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--w-white)"/></marker>
+    <marker id="h-grey"   viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--w-grey)"/></marker>
+  </defs>
+
+  <text x="40"  y="28" font-size="11" font-weight="600" fill="currentColor" opacity=".5">ESP32</text>
+  <text x="460" y="28" font-size="11" font-weight="600" fill="currentColor" opacity=".5" text-anchor="end">MODULE</text>
+  <text x="530" y="28" font-size="11" font-weight="600" fill="currentColor" opacity=".5">ESP32</text>
+  <text x="950" y="28" font-size="11" font-weight="600" fill="currentColor" opacity=".5" text-anchor="end">MODULE</text>
+
+  <!-- ==================== COLUMN A ==================== -->
+
+  <!-- MPU6050 -->
+  <rect x="30" y="44" width="440" height="176" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity=".3"/>
+  <text x="46" y="66" font-size="12" font-weight="600" fill="currentColor">MPU6050 (GY-521) — I2C 0x68</text>
+
+  <text x="140" y="96" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">D21</text>
+  <line x1="150" y1="92" x2="288" y2="92" stroke="var(--w-blue)" stroke-width="3" marker-end="url(#h-blue)"/>
+  <text x="219" y="84" text-anchor="middle" font-size="9" fill="var(--w-blue)">blue</text>
+  <text x="300" y="96" font-size="12" fill="currentColor">SDA</text>
+
+  <text x="140" y="128" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">D22</text>
+  <line x1="150" y1="124" x2="288" y2="124" stroke="var(--w-yellow)" stroke-width="3" marker-end="url(#h-yellow)"/>
+  <text x="219" y="116" text-anchor="middle" font-size="9" fill="var(--w-yellow)">yellow</text>
+  <text x="300" y="128" font-size="12" fill="currentColor">SCL</text>
+
+  <text x="140" y="160" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">3V3</text>
+  <line x1="150" y1="156" x2="288" y2="156" stroke="var(--w-red)" stroke-width="3" marker-end="url(#h-red)"/>
+  <text x="219" y="148" text-anchor="middle" font-size="9" fill="var(--w-red)">red</text>
+  <text x="300" y="160" font-size="12" fill="currentColor">VCC</text>
+
+  <text x="140" y="192" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">GND</text>
+  <line x1="150" y1="188" x2="288" y2="188" stroke="var(--w-black)" stroke-width="3" marker-end="url(#h-black)"/>
+  <text x="219" y="180" text-anchor="middle" font-size="9" fill="var(--w-black)">black</text>
+  <text x="300" y="192" font-size="12" fill="currentColor">GND</text>
+
+  <!-- RGB LED -->
+  <rect x="30" y="240" width="440" height="176" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity=".3"/>
+  <text x="46" y="262" font-size="12" font-weight="600" fill="currentColor">RGB LED — bare 5 mm, common cathode</text>
+
+  <text x="140" y="292" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">D16</text>
+  <line x1="150" y1="288" x2="288" y2="288" stroke="var(--w-brown)" stroke-width="3" marker-end="url(#h-brown)"/>
+  <text x="219" y="280" text-anchor="middle" font-size="9" fill="var(--w-brown)">brown</text>
+  <text x="300" y="292" font-size="12" fill="currentColor">R leg · 220 Ω in line</text>
+
+  <text x="140" y="324" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">D17</text>
+  <line x1="150" y1="320" x2="288" y2="320" stroke="var(--w-green)" stroke-width="3" marker-end="url(#h-green)"/>
+  <text x="219" y="312" text-anchor="middle" font-size="9" fill="var(--w-green)">green</text>
+  <text x="300" y="324" font-size="12" fill="currentColor">G leg · 220 Ω in line</text>
+
+  <text x="140" y="356" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">D5</text>
+  <line x1="150" y1="352" x2="288" y2="352" stroke="var(--w-purple)" stroke-width="3" marker-end="url(#h-purple)"/>
+  <text x="219" y="344" text-anchor="middle" font-size="9" fill="var(--w-purple)">purple</text>
+  <text x="300" y="356" font-size="12" fill="currentColor">B leg · 220 Ω in line</text>
+
+  <text x="140" y="388" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">GND</text>
+  <line x1="150" y1="384" x2="288" y2="384" stroke="var(--w-black)" stroke-width="3" marker-end="url(#h-black)"/>
+  <text x="219" y="376" text-anchor="middle" font-size="9" fill="var(--w-black)">black</text>
+  <text x="300" y="388" font-size="12" fill="currentColor">longest leg</text>
+
+  <!-- Matrix -->
+  <rect x="30" y="436" width="440" height="144" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity=".3"/>
+  <text x="46" y="458" font-size="12" font-weight="600" fill="currentColor">WS2812B 4×4 matrix</text>
+
+  <text x="140" y="488" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">D14</text>
+  <line x1="150" y1="484" x2="288" y2="484" stroke="var(--w-white)" stroke-width="3" marker-end="url(#h-white)"/>
+  <text x="219" y="476" text-anchor="middle" font-size="9" fill="var(--w-white)">white</text>
+  <text x="300" y="488" font-size="12" fill="currentColor">DIN — the IN edge, not OUT</text>
+
+  <text x="140" y="520" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">VIN</text>
+  <line x1="150" y1="516" x2="288" y2="516" stroke="var(--w-orange)" stroke-width="3" marker-end="url(#h-orange)"/>
+  <text x="219" y="508" text-anchor="middle" font-size="9" fill="var(--w-orange)">orange</text>
+  <text x="300" y="520" font-size="12" fill="currentColor">5V</text>
+
+  <text x="140" y="552" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">GND</text>
+  <line x1="150" y1="548" x2="288" y2="548" stroke="var(--w-black)" stroke-width="3" marker-end="url(#h-black)"/>
+  <text x="219" y="540" text-anchor="middle" font-size="9" fill="var(--w-black)">black</text>
+  <text x="300" y="552" font-size="12" fill="currentColor">GND</text>
+
+  <!-- ==================== COLUMN B ==================== -->
+
+  <!-- PIR -->
+  <rect x="520" y="44" width="440" height="144" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity=".3"/>
+  <text x="536" y="66" font-size="12" font-weight="600" fill="currentColor">PIR (HC-SR501)</text>
+
+  <text x="630" y="96" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">D27</text>
+  <line x1="640" y1="92" x2="778" y2="92" stroke="var(--w-grey)" stroke-width="3" marker-end="url(#h-grey)"/>
+  <text x="709" y="84" text-anchor="middle" font-size="9" fill="var(--w-grey)">grey</text>
+  <text x="790" y="96" font-size="12" fill="currentColor">OUT</text>
+
+  <text x="630" y="128" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">VIN</text>
+  <line x1="640" y1="124" x2="778" y2="124" stroke="var(--w-orange)" stroke-width="3" marker-end="url(#h-orange)"/>
+  <text x="709" y="116" text-anchor="middle" font-size="9" fill="var(--w-orange)">orange</text>
+  <text x="790" y="128" font-size="12" fill="currentColor">VCC</text>
+
+  <text x="630" y="160" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">GND</text>
+  <line x1="640" y1="156" x2="778" y2="156" stroke="var(--w-black)" stroke-width="3" marker-end="url(#h-black)"/>
+  <text x="709" y="148" text-anchor="middle" font-size="9" fill="var(--w-black)">black</text>
+  <text x="790" y="160" font-size="12" fill="currentColor">GND</text>
+
+  <!-- Button -->
+  <rect x="520" y="208" width="440" height="144" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity=".3"/>
+  <text x="536" y="230" font-size="12" font-weight="600" fill="currentColor">Push button — WiFi reset, hold 3 s</text>
+
+  <text x="630" y="260" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">D26</text>
+  <line x1="640" y1="256" x2="778" y2="256" stroke="var(--w-green)" stroke-width="3" stroke-dasharray="7 3" marker-end="url(#h-green)"/>
+  <text x="709" y="248" text-anchor="middle" font-size="9" fill="var(--w-green)">green ②</text>
+  <text x="790" y="260" font-size="12" fill="currentColor">OUT</text>
+
+  <text x="630" y="292" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">3V3</text>
+  <line x1="640" y1="288" x2="778" y2="288" stroke="var(--w-red)" stroke-width="3" marker-end="url(#h-red)"/>
+  <text x="709" y="280" text-anchor="middle" font-size="9" fill="var(--w-red)">red</text>
+  <text x="790" y="292" font-size="12" fill="currentColor">VCC</text>
+
+  <text x="630" y="324" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">GND</text>
+  <line x1="640" y1="320" x2="778" y2="320" stroke="var(--w-black)" stroke-width="3" marker-end="url(#h-black)"/>
+  <text x="709" y="312" text-anchor="middle" font-size="9" fill="var(--w-black)">black</text>
+  <text x="790" y="324" font-size="12" fill="currentColor">GND</text>
+
+  <!-- Buzzer -->
+  <rect x="520" y="372" width="440" height="112" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity=".3"/>
+  <text x="536" y="394" font-size="12" font-weight="600" fill="currentColor">Active buzzer — 2 pin, only “+” marked</text>
+
+  <text x="630" y="424" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">D13</text>
+  <line x1="640" y1="420" x2="778" y2="420" stroke="var(--w-yellow)" stroke-width="3" stroke-dasharray="7 3" marker-end="url(#h-yellow)"/>
+  <text x="709" y="412" text-anchor="middle" font-size="9" fill="var(--w-yellow)">yellow ②</text>
+  <text x="790" y="424" font-size="12" fill="currentColor">+</text>
+
+  <text x="630" y="456" text-anchor="end" font-size="12" font-weight="600" fill="currentColor">GND</text>
+  <line x1="640" y1="452" x2="778" y2="452" stroke="var(--w-black)" stroke-width="3" marker-end="url(#h-black)"/>
+  <text x="709" y="444" text-anchor="middle" font-size="9" fill="var(--w-black)">black</text>
+  <text x="790" y="456" font-size="12" fill="currentColor">− (unmarked pin)</text>
+
+  <!-- Shared-rail note -->
+  <rect x="520" y="504" width="440" height="76" rx="6" fill="none" stroke="var(--w-orange)" stroke-width="1.5" opacity=".7"/>
+  <text x="536" y="526" font-size="11" font-weight="600" fill="var(--w-orange)">Six blacks, two reds, two oranges</text>
+  <text x="536" y="546" font-size="10.5" fill="currentColor" opacity=".75">The ESP32 has one usable pin each for 3V3 and VIN, and two for GND.</text>
+  <text x="536" y="562" font-size="10.5" fill="currentColor" opacity=".75">Run one wire out to a breadboard row per rail, then branch from that row.</text>
+</svg>
+
+<div class="key">
+  <span><i style="border-color:var(--w-black)"></i>black — GND</span>
+  <span><i style="border-color:var(--w-red)"></i>red — 3V3</span>
+  <span><i style="border-color:var(--w-orange)"></i>orange — VIN 5V</span>
+  <span><i style="border-color:var(--w-yellow)"></i>yellow — SCL / buzzer</span>
+  <span><i style="border-color:var(--w-blue)"></i>blue — SDA</span>
+  <span><i style="border-color:var(--w-brown)"></i>brown — LED R</span>
+  <span><i style="border-color:var(--w-green)"></i>green — LED G / button</span>
+  <span><i style="border-color:var(--w-purple)"></i>purple — LED B</span>
+  <span><i style="border-color:var(--w-white)"></i>white — matrix DIN</span>
+  <span><i style="border-color:var(--w-grey)"></i>grey — PIR OUT</span>
+</div>
+
+<figcaption>Every wire you have to plug, grouped by the module it lands on, in the jumper colour to use. Ten colours cover twelve nets, so the button and the buzzer reuse green and yellow — those two are dashed and marked ②, and neither shares a header with the LED or I2C run it borrows from. The four grouped rails are the ones worth double-checking: a module with its signal right and its ground missing behaves exactly like a dead part.</figcaption>
+</figure>
+
+<div class="note">
+  <strong>D14 and D27 are easy to swap and the symptoms mislead.</strong>
+  The matrix reads pixel data on <code>D14</code>; the PIR reports motion on <code>D27</code>. Putting matrix <code>DIN</code> on <code>D27</code> leaves the matrix dark <em>and</em> makes the PIR fire continuously, because pixel data on the input pin reads as endless motion. Two separate faults, one wrong hole.
+</div>
+
+<h2>Pin locations on the board</h2>
+
+<p class="sub">Every wire leaves a component from the edge facing the board — nothing wraps around the back. The supply bars sit in the gap between the components and the ESP32, so a power wire is a short stub, not a detour.</p>
+
+<figure>
+<svg viewBox="0 0 1100 710" role="img" aria-label="Board wiring with all wires leaving each component on the board-facing side. Left column top to bottom: push button, PIR, LED matrix, buzzer — all wiring rightward to the ESP32 left header, which carries button OUT on D26, PIR OUT on D27, matrix DIN on D14 and buzzer plus on D13. Their shared GND and VIN bars run vertically in the gap between the components and the board. Right column top to bottom: MPU6050 and RGB LED, wiring leftward to the right header, which carries SCL on D22, SDA on D21 and the LED blue, green and red legs on D5, D17 and D16, with shared GND and 3V3 bars in that gap. No signal wire crosses another. One dashed wire runs across the top carrying 3.3 volts to the button, because the left header has no 3V3 pin.">
+  <defs>
+    <marker id="p-yellow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--w-yellow)"/></marker>
+    <marker id="p-blue"   viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--w-blue)"/></marker>
+    <marker id="p-brown"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--w-brown)"/></marker>
+    <marker id="p-green"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--w-green)"/></marker>
+    <marker id="p-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--w-purple)"/></marker>
+    <marker id="p-white"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--w-white)"/></marker>
+    <marker id="p-grey"   viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--w-grey)"/></marker>
+  </defs>
+
+  <!-- ===================== supply bars, in the gap ===================== -->
+  <line x1="306" y1="168" x2="306" y2="584" stroke="var(--w-black)"  stroke-width="3.5"/>
+  <line x1="332" y1="270" x2="332" y2="622" stroke="var(--w-orange)" stroke-width="3.5"/>
+  <line x1="794" y1="172" x2="794" y2="584" stroke="var(--w-black)"  stroke-width="3.5"/>
+  <line x1="768" y1="152" x2="768" y2="622" stroke="var(--w-red)"    stroke-width="3.5"/>
+  <text x="306" y="158" text-anchor="middle" font-size="10" font-weight="700" fill="var(--w-black)">GND</text>
+  <text x="332" y="260" text-anchor="middle" font-size="10" font-weight="700" fill="var(--w-orange)">VIN</text>
+  <text x="794" y="162" text-anchor="middle" font-size="10" font-weight="700" fill="var(--w-black)">GND</text>
+  <text x="768" y="142" text-anchor="middle" font-size="10" font-weight="700" fill="var(--w-red)">3V3</text>
+
+  <!-- ===================== ESP32 ===================== -->
+  <rect x="440" y="70" width="220" height="580" rx="8" fill="none" stroke="currentColor" stroke-width="2"/>
+  <rect x="512" y="34" width="76" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".55"/>
+  <text x="550" y="54" text-anchor="middle" font-size="11" fill="currentColor" opacity=".65">USB</text>
+  <text x="550" y="300" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor" opacity=".4">ESP32 DevKit</text>
+  <text x="550" y="318" text-anchor="middle" font-size="11" fill="currentColor" opacity=".4">30-pin</text>
+
+  <text x="452" y="94"  font-size="11" fill="currentColor" opacity=".35">EN</text>
+  <text x="452" y="132" font-size="11" fill="currentColor" opacity=".35">VP 36</text>
+  <text x="452" y="170" font-size="11" fill="currentColor" opacity=".35">VN 39</text>
+  <text x="452" y="208" font-size="11" fill="currentColor" opacity=".35">D34</text>
+  <text x="452" y="246" font-size="11" fill="currentColor" opacity=".35">D35</text>
+  <text x="452" y="284" font-size="11" fill="currentColor" opacity=".35">D32</text>
+  <text x="452" y="322" font-size="11" fill="currentColor" opacity=".35">D33</text>
+  <text x="452" y="360" font-size="11" fill="currentColor" opacity=".35">D25</text>
+  <text x="452" y="398" font-size="11" font-weight="700" fill="var(--w-green)">D26</text>
+  <text x="452" y="436" font-size="11" font-weight="700" fill="var(--w-grey)">D27</text>
+  <text x="452" y="474" font-size="11" font-weight="700" fill="var(--w-white)">D14</text>
+  <text x="452" y="512" font-size="11" fill="currentColor" opacity=".35">D12</text>
+  <text x="452" y="550" font-size="11" font-weight="700" fill="var(--w-yellow)">D13</text>
+  <text x="452" y="588" font-size="11" font-weight="700" fill="var(--w-black)">GND</text>
+  <text x="452" y="626" font-size="11" font-weight="700" fill="var(--w-orange)">VIN 5V</text>
+
+  <text x="648" y="94"  font-size="11" text-anchor="end" fill="currentColor" opacity=".35">D23</text>
+  <text x="648" y="132" font-size="11" text-anchor="end" font-weight="700" fill="var(--w-yellow)">D22</text>
+  <text x="648" y="170" font-size="11" text-anchor="end" fill="currentColor" opacity=".35">TX0</text>
+  <text x="648" y="208" font-size="11" text-anchor="end" fill="currentColor" opacity=".35">RX0</text>
+  <text x="648" y="246" font-size="11" text-anchor="end" font-weight="700" fill="var(--w-blue)">D21</text>
+  <text x="648" y="284" font-size="11" text-anchor="end" fill="currentColor" opacity=".35">D19</text>
+  <text x="648" y="322" font-size="11" text-anchor="end" fill="currentColor" opacity=".35">D18</text>
+  <text x="648" y="360" font-size="11" text-anchor="end" font-weight="700" fill="var(--w-purple)">D5</text>
+  <text x="648" y="398" font-size="11" text-anchor="end" font-weight="700" fill="var(--w-green)">D17</text>
+  <text x="648" y="436" font-size="11" text-anchor="end" font-weight="700" fill="var(--w-brown)">D16</text>
+  <text x="648" y="474" font-size="11" text-anchor="end" fill="currentColor" opacity=".35">D4</text>
+  <text x="648" y="512" font-size="11" text-anchor="end" fill="currentColor" opacity=".35">D2</text>
+  <text x="648" y="550" font-size="11" text-anchor="end" fill="currentColor" opacity=".35">D15</text>
+  <text x="648" y="588" font-size="11" text-anchor="end" font-weight="700" fill="var(--w-black)">GND</text>
+  <text x="648" y="626" font-size="11" text-anchor="end" font-weight="700" fill="var(--w-red)">3V3</text>
+
+  <!-- ===================== LEFT COMPONENTS — all wires exit right ===================== -->
+
+  <rect x="40" y="90" width="240" height="90" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="56" y="112" font-size="13" font-weight="600" fill="currentColor">Push button (WiFi reset)</text>
+  <text x="268" y="136" text-anchor="end" font-size="11" fill="var(--w-green)">OUT</text>
+  <text x="268" y="154" text-anchor="end" font-size="11" fill="var(--w-red)">VCC</text>
+  <text x="268" y="172" text-anchor="end" font-size="11" fill="var(--w-black)">GND</text>
+
+  <rect x="40" y="210" width="240" height="90" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="56" y="232" font-size="13" font-weight="600" fill="currentColor">PIR (HC-SR501)</text>
+  <text x="268" y="256" text-anchor="end" font-size="11" fill="var(--w-grey)">OUT</text>
+  <text x="268" y="274" text-anchor="end" font-size="11" fill="var(--w-orange)">VCC</text>
+  <text x="268" y="292" text-anchor="end" font-size="11" fill="var(--w-black)">GND</text>
+
+  <rect x="40" y="330" width="240" height="90" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="56" y="352" font-size="13" font-weight="600" fill="currentColor">WS2812B 4×4 matrix</text>
+  <text x="268" y="376" text-anchor="end" font-size="11" fill="var(--w-white)">DIN — IN edge</text>
+  <text x="268" y="394" text-anchor="end" font-size="11" fill="var(--w-orange)">5V</text>
+  <text x="268" y="412" text-anchor="end" font-size="11" fill="var(--w-black)">GND</text>
+
+  <rect x="40" y="450" width="240" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="56" y="472" font-size="13" font-weight="600" fill="currentColor">Active buzzer — 2 pin</text>
+  <text x="268" y="496" text-anchor="end" font-size="11" fill="var(--w-yellow)">+</text>
+  <text x="268" y="514" text-anchor="end" font-size="11" fill="var(--w-black)">− (unmarked)</text>
+
+  <!-- left power stubs -->
+  <line x1="280" y1="168" x2="306" y2="168" stroke="var(--w-black)"  stroke-width="2.5"/>
+  <line x1="280" y1="270" x2="332" y2="270" stroke="var(--w-orange)" stroke-width="2.5"/>
+  <line x1="280" y1="288" x2="306" y2="288" stroke="var(--w-black)"  stroke-width="2.5"/>
+  <line x1="280" y1="390" x2="332" y2="390" stroke="var(--w-orange)" stroke-width="2.5"/>
+  <line x1="280" y1="408" x2="306" y2="408" stroke="var(--w-black)"  stroke-width="2.5"/>
+  <line x1="280" y1="510" x2="306" y2="510" stroke="var(--w-black)"  stroke-width="2.5"/>
+  <circle cx="306" cy="168" r="4" fill="var(--w-black)"/>
+  <circle cx="332" cy="270" r="4" fill="var(--w-orange)"/>
+  <circle cx="306" cy="288" r="4" fill="var(--w-black)"/>
+  <circle cx="332" cy="390" r="4" fill="var(--w-orange)"/>
+  <circle cx="306" cy="408" r="4" fill="var(--w-black)"/>
+  <circle cx="306" cy="510" r="4" fill="var(--w-black)"/>
+
+  <!-- left signals: component order matches pin order, lanes step inward -->
+  <polyline points="280,132 404,132 404,394 440,394" fill="none" stroke="var(--w-green)"  stroke-width="2.5" stroke-dasharray="7 3" marker-end="url(#p-green)"/>
+  <polyline points="280,252 388,252 388,432 440,432" fill="none" stroke="var(--w-grey)"   stroke-width="2.5" marker-end="url(#p-grey)"/>
+  <polyline points="280,372 372,372 372,470 440,470" fill="none" stroke="var(--w-white)"  stroke-width="2.5" marker-end="url(#p-white)"/>
+  <polyline points="280,492 356,492 356,546 440,546" fill="none" stroke="var(--w-yellow)" stroke-width="2.5" stroke-dasharray="7 3" marker-end="url(#p-yellow)"/>
+
+  <!-- left bar feeds -->
+  <line x1="440" y1="584" x2="306" y2="584" stroke="var(--w-black)"  stroke-width="3"/>
+  <line x1="440" y1="622" x2="332" y2="622" stroke="var(--w-orange)" stroke-width="3"/>
+  <circle cx="306" cy="584" r="4.5" fill="var(--w-black)"/>
+  <circle cx="332" cy="622" r="4.5" fill="var(--w-orange)"/>
+
+  <!-- ===================== RIGHT COMPONENTS — all wires exit left ===================== -->
+
+  <rect x="820" y="90" width="240" height="110" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="1044" y="112" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">MPU6050 (GY-521)</text>
+  <text x="832" y="136" font-size="11" fill="var(--w-yellow)">SCL</text>
+  <text x="832" y="156" font-size="11" fill="var(--w-blue)">SDA</text>
+  <text x="832" y="176" font-size="11" fill="var(--w-red)">VCC</text>
+  <text x="832" y="196" font-size="11" fill="var(--w-black)">GND</text>
+
+  <rect x="820" y="230" width="240" height="140" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="1044" y="252" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">RGB LED — bare 5 mm</text>
+  <text x="832" y="280" font-size="11" fill="var(--w-purple)">B leg · 220 Ω</text>
+  <text x="832" y="306" font-size="11" fill="var(--w-green)">G leg · 220 Ω</text>
+  <text x="832" y="332" font-size="11" fill="var(--w-brown)">R leg · 220 Ω</text>
+  <text x="832" y="358" font-size="11" fill="var(--w-black)">longest leg</text>
+
+  <!-- right power stubs -->
+  <line x1="820" y1="172" x2="768" y2="172" stroke="var(--w-red)"   stroke-width="2.5"/>
+  <line x1="820" y1="192" x2="794" y2="192" stroke="var(--w-black)" stroke-width="2.5"/>
+  <line x1="820" y1="354" x2="794" y2="354" stroke="var(--w-black)" stroke-width="2.5"/>
+  <circle cx="768" cy="172" r="4" fill="var(--w-red)"/>
+  <circle cx="794" cy="192" r="4" fill="var(--w-black)"/>
+  <circle cx="794" cy="354" r="4" fill="var(--w-black)"/>
+
+  <!-- right signals: inner lane for the topmost, so none cross another signal -->
+  <polyline points="820,132 676,132 676,128 660,128" fill="none" stroke="var(--w-yellow)" stroke-width="2.5" marker-end="url(#p-yellow)"/>
+  <polyline points="820,152 692,152 692,242 660,242" fill="none" stroke="var(--w-blue)"   stroke-width="2.5" marker-end="url(#p-blue)"/>
+  <polyline points="820,276 708,276 708,356 660,356" fill="none" stroke="var(--w-purple)" stroke-width="2.5" marker-end="url(#p-purple)"/>
+  <polyline points="820,302 724,302 724,394 660,394" fill="none" stroke="var(--w-green)"  stroke-width="2.5" marker-end="url(#p-green)"/>
+  <polyline points="820,328 740,328 740,432 660,432" fill="none" stroke="var(--w-brown)"  stroke-width="2.5" marker-end="url(#p-brown)"/>
+
+  <!-- right bar feeds -->
+  <line x1="660" y1="584" x2="794" y2="584" stroke="var(--w-black)" stroke-width="3"/>
+  <line x1="660" y1="622" x2="768" y2="622" stroke="var(--w-red)"   stroke-width="3"/>
+  <circle cx="794" cy="584" r="4.5" fill="var(--w-black)"/>
+  <circle cx="768" cy="622" r="4.5" fill="var(--w-red)"/>
+
+  <!-- ============ the one wire that crosses the board ============ -->
+  <polyline points="768,172 768,24 294,24 294,150 280,150" fill="none" stroke="var(--w-red)" stroke-width="2.5" stroke-dasharray="9 4" marker-end="url(#p-green)"/>
+  <text x="530" y="16" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--w-red)">the only wire that crosses sides — 3.3 V to the button, since the left header has no 3V3 pin</text>
+
+  <text x="40" y="690" font-size="10.5" fill="currentColor" opacity=".6">A filled dot is a join; a bare crossing is not. The four vertical bars are ordinary breadboard rows, each fed by one wire from the ESP32 and shared by everything on that side.</text>
+</svg>
+
+<div class="key">
+  <span><i style="border-color:var(--w-black)"></i>black — GND</span>
+  <span><i style="border-color:var(--w-red)"></i>red — 3V3</span>
+  <span><i style="border-color:var(--w-orange)"></i>orange — VIN 5V</span>
+  <span><i style="border-color:var(--w-yellow)"></i>yellow — SCL / buzzer</span>
+  <span><i style="border-color:var(--w-blue)"></i>blue — SDA</span>
+  <span><i style="border-color:var(--w-brown)"></i>brown — LED R</span>
+  <span><i style="border-color:var(--w-green)"></i>green — LED G / button</span>
+  <span><i style="border-color:var(--w-purple)"></i>purple — LED B</span>
+  <span><i style="border-color:var(--w-white)"></i>white — matrix DIN</span>
+  <span><i style="border-color:var(--w-grey)"></i>grey — PIR OUT</span>
+</div>
+
+<figcaption>Components stack outward, wires run inward: every pin sits on the edge facing the board, and every wire from that pin heads straight for the ESP32 without doubling back. Supply comes off the two bars in the same gap, so a ground wire is a 26-pixel stub rather than a loop around the module. Signal lanes are ordered so no signal crosses another — the topmost component takes the lane nearest the board on the left and nearest the board on the right, and the rest step outward from there. One wire genuinely has to cross: the button runs on <code>D26</code>, a left-header pin, but needs 3.3 V, which only exists on the right header. Moving <code>WIFI_RESET_PIN</code> to <code>D4</code> would delete that wire — a firmware change, so it is not done here.</figcaption>
+</figure>
+
+<h2>Before you power it</h2>
+
+<div class="note">
+  <strong>VIN must never touch a GPIO.</strong>
+  It sits at about 4.7 V and ESP32 inputs are 3.3 V tolerant only. Fine on the VCC pad of the PIR or the matrix; damaging on any signal pin. This is the one wiring mistake that breaks the board rather than merely failing.
+</div>
+
+<div class="note">
+  <strong>That RGB LED is a bare 5 mm part, not a module.</strong>
+  It has no current-limiting resistors, so each of the three colour legs needs roughly 220 Ω between it and the GPIO. The firmware drives channels HIGH to light them, so it expects common cathode — longest leg to ground.
+</div>
+
+<div class="note">
+  <strong>The matrix can brown out the board.</strong>
+  All 16 pixels white at full brightness is about 960 mA on the 5 V rail, more than USB supplies. <code>MATRIX_BRIGHTNESS</code> is 60 for that reason; raise it only with a separate 5 V supply, its ground tied back to the ESP32's.
+</div>
+
+</main>
+
+</html>

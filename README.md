@@ -49,6 +49,7 @@ ESP32 + MPU6050 + Buzzer + RGB LED + WS2812B Matrix + PIR
                             ├── Setup Instructions overlay
                             ├── Cone Simulator (non-persistent)
                             ├── Public Hazard Map (/hazards.html)
+                            ├── Breadboard Wiring (/wiring.html)
                             ├── CIFS Feed Viewer (/cifs-viewer.html)
                             ├── CIFS XML (/api/feed/cifs.xml)
                             └── CIFS JSON (/api/feed/cifs.json)
@@ -97,6 +98,7 @@ ESP32 + MPU6050 + Buzzer + RGB LED + WS2812B Matrix + PIR
 - **Nav cards** — card-style links to Public Hazard Map and CIFS Feed Viewer
 - **Mobile-first** — responsive design with touch-friendly cards, 2x2 stats grid
 - **Public Hazard Map** — read-only map at `/hazards.html` for drivers/public
+- **Breadboard Wiring** — hardware wiring diagrams at `/wiring.html`
 - **CIFS feeds** — Waze-compatible XML + JSON at `/api/feed/cifs.xml` and `.json`
 - **Version display** — footer shows dashboard version, `/api/version` endpoint
 
@@ -168,6 +170,7 @@ syuk/
 │   │   ├── app.js             # MQTT, map, fleet list, detail panel, simulator, auto-discovery
 │   │   ├── style.css          # Dark theme + mobile-first responsive
 │   │   ├── hazards.html       # Public hazard map (read-only)
+│   │   ├── wiring.html        # Breadboard wiring diagrams
 │   │   └── cifs-viewer.html   # CIFS feed viewer with Waze integration docs
 │   ├── wrangler.toml          # Cloudflare Workers config + KV binding
 │   └── package.json           # Hono, wrangler deps, rc scripts
